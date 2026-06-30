@@ -8,6 +8,7 @@
 #include "Scene/Scene05_StylizedShading.h"
 #include "Scene/Scene06_ProceduralNoise.h"
 #include "Scene/Scene07_PostProcessing.h"
+#include "Scene/Scene08_DeferredShading.h"
 #include <DirectXColors.h>
 #include <cassert>
 
@@ -41,6 +42,7 @@ bool DemoApp::Init()
     m_scenes[4] = std::make_unique<Scene05_StylizedShading>();       // 5
     m_scenes[5] = std::make_unique<Scene06_ProceduralNoise>();       // 6
     m_scenes[6] = std::make_unique<Scene07_PostProcessing>();        // 7
+    m_scenes[7] = std::make_unique<Scene08_DeferredShading>();       // 8
 
     SceneContext ctx = MakeContext();
     for (auto& s : m_scenes)

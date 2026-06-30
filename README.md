@@ -6,7 +6,7 @@
 - **플랫폼**: Win32 Desktop, x64, Direct3D 11
 - **의존성**: **Windows SDK만 사용** (vcpkg/NuGet/외부 라이브러리 불필요) — clone 후 바로 빌드됩니다.
 
-> 작성 중인 프로젝트입니다. 현재 **Scene01~07** (게임수학 기초 · 보간/곡선 · 행렬/투영 · Phong/Normal Mapping · 스타일라이즈드 셰이딩 · 절차적 노이즈 · 포스트 프로세싱) 가 구현되어 있고, **Scene08(Deferred)** 만 남았습니다. 전체 명세는 [`docs/dx11-math-shader-demo-guide.md`](docs/dx11-math-shader-demo-guide.md) 참고.
+> **Scene01~08 전부 구현 완료.** 게임수학 기초 · 보간/곡선 · 행렬/투영 · Phong/Normal Mapping · 스타일라이즈드 셰이딩 · 절차적 노이즈 · 포스트 프로세싱 · 디퍼드 셰이딩. 전체 명세는 [`docs/dx11-math-shader-demo-guide.md`](docs/dx11-math-shader-demo-guide.md) 참고.
 
 ---
 
@@ -44,7 +44,7 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 
 ## Scene01 — 게임수학 기초
 
-2D 오버레이로 1학기 게임수학의 핵심을 보여줍니다.
+2D 오버레이로 게임수학의 핵심을 보여줍니다.
 
 | 서브모드 | 내용 |
 |----------|------|
@@ -232,6 +232,29 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 
 ---
 
+## Scene08 — 디퍼드 셰이딩
+
+씬을 **G-Buffer(MRT 3장)** 에 기록한 뒤, 전체화면에서 한 번에 여러 점광원을 누적합니다. 마우스 좌드래그 공전.
+
+| G-Buffer | 포맷 | 내용 |
+|----------|------|------|
+| RT0 | `R8G8B8A8` | Albedo |
+| RT1 | `R16G16B16A16F` | World Normal |
+| RT2 | `R16G16B16A16F` | World Position |
+
+- **Geometry Pass**: 구체 9개 + 바닥을 G-Buffer에 기록
+- **Lighting Pass**: 전체화면에서 G-Buffer를 읽어 8개 컬러 점광원을 누적 → 톤매핑
+- `F`: G-Buffer 4분할 시각화 토글  ·  `+`/`-`: 광원 수
+
+<table>
+  <tr>
+    <td align="center" width="50%"><img width="420" src="docs/images/scene08/scene08_deferred.png" alt="Deferred" /><br/><sub>8개 점광원 디퍼드 라이팅 (광원 마커 표시)</sub></td>
+    <td align="center" width="50%"><img width="420" src="docs/images/scene08/scene08_gbuffer.png" alt="G-Buffer" /><br/><sub><b>F</b> · G-Buffer 시각화 (Albedo / Normal / WorldPos / 최종)</sub></td>
+  </tr>
+</table>
+
+---
+
 ## 아키텍처
 
 ```
@@ -247,7 +270,8 @@ src/
 │   ├── Scene04_PhongAndNormalMap.{h,cpp}   Phong/NormalMap (임베드 HLSL)
 │   ├── Scene05_StylizedShading.{h,cpp}     Toon/Outline/Sobel/Hatching
 │   ├── Scene06_ProceduralNoise.{h,cpp}     노이즈/FBM/DomainWarp/Truchet
-│   └── Scene07_PostProcessing.{h,cpp}      Blur/Bilateral/Gamma/ToneMap/Bloom
+│   ├── Scene07_PostProcessing.{h,cpp}      Blur/Bilateral/Gamma/ToneMap/Bloom
+│   └── Scene08_DeferredShading.{h,cpp}     G-Buffer(MRT)/Multi-Light
 ├── Math/
 │   ├── Collision2D.h                AABB/OBB(SAT)/반사/다각형 내부판별
 │   └── Curves.h                     Bezier/Hermite/Catmull-Rom/이징

@@ -54,6 +54,9 @@
     <ClCompile Include="src\Scene\Scene07_PostProcessing.cpp">
       <Filter>Demo\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="src\Scene\Scene08_DeferredShading.cpp">
+      <Filter>Demo\Scene</Filter>
+    </ClCompile>
     <ClCompile Include="src\d3dApp.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
@@ -129,6 +132,9 @@
       <Filter>Demo\Scene</Filter>
     </ClInclude>
     <ClInclude Include="src\Scene\Scene07_PostProcessing.h">
+      <Filter>Demo\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Scene\Scene08_DeferredShading.h">
       <Filter>Demo\Scene</Filter>
     </ClInclude>
     <ClInclude Include="src\Render\OrbitCamera.h">

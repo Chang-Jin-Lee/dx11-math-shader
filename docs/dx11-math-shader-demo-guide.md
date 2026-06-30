@@ -1,7 +1,7 @@
 # DX11 수학·셰이더 프로그래밍 데모 — AI 구현 지침서
 
 > **대상 독자:** 이 문서를 받은 AI 구현자.  
-> **목표:** 오규환 교수 게임수학(1·2학기)·셰이더 프로그래밍(3·4학기) 4학기 커리큘럼의 핵심 개념을 하나의 D3D11 인터랙티브 데모로 구현한다.  
+> **목표:** 게임수학·셰이더 프로그래밍의 핵심 개념을 하나의 D3D11 인터랙티브 데모로 구현한다.  
 > **기반:** 구현자가 넘겨받은 기존 D3D11 베이스 코드(디바이스, 스왑체인, 렌더 타겟, 기본 드로우 루프 포함). 새 파일을 추가하고 기존 진입점(Update/Render)에 연결하는 방식으로만 수정한다.
 
 ---
@@ -12,14 +12,14 @@
 
 ```
 DemoSceneManager
-├── Scene01_MathFundamentals     (1학기 — 충돌·벡터·운동)
-├── Scene02_CurvesAndSplines     (2학기 — 보간·Bezier·스플라인)
-├── Scene03_TransformProjection  (2학기 — 행렬변환·투영·카메라)
-├── Scene04_PhongAndNormalMap    (3학기 — Phong 조명·Normal Mapping)
-├── Scene05_StylizedShading      (3학기 — Toon·Outline·Sobel·Hatching)
-├── Scene06_ProceduralNoise      (4학기 — Noise·FBM·Domain Warping)
-├── Scene07_PostProcessing       (4학기 — Blur·HDR·Bloom·SSAO)
-└── Scene08_DeferredShading      (4학기 — Deferred·Multi-Light)
+├── Scene01_MathFundamentals     (충돌·벡터·운동)
+├── Scene02_CurvesAndSplines     (보간·Bezier·스플라인)
+├── Scene03_TransformProjection  (행렬변환·투영·카메라)
+├── Scene04_PhongAndNormalMap    (Phong 조명·Normal Mapping)
+├── Scene05_StylizedShading      (Toon·Outline·Sobel·Hatching)
+├── Scene06_ProceduralNoise      (Noise·FBM·Domain Warping)
+├── Scene07_PostProcessing       (Blur·HDR·Bloom·SSAO)
+└── Scene08_DeferredShading      (Deferred·Multi-Light)
 ```
 
 **씬 전환:** 숫자키 `1`–`8`. 현재 씬 번호와 이름을 화면 좌상단에 텍스트로 표시.
@@ -113,7 +113,7 @@ float3 lerp3(float3 a, float3 b, float t) { return a + t * (b - a); }
 
 ---
 
-## 2. Scene01 — 게임수학 기초 (1학기)
+## 2. Scene01 — 게임수학 기초
 
 **키보드 서브모드 (씬 내 Q/W/E/R 토글):**
 - Q: AABB 충돌
@@ -216,7 +216,7 @@ bool PointInConvexPolygon(const std::vector<XMFLOAT2>& poly, XMFLOAT2 p) {
 
 ---
 
-## 3. Scene02 — 보간과 곡선 (2학기)
+## 3. Scene02 — 보간과 곡선
 
 **서브모드 (Q/W/E/R):**
 - Q: 선형·정현 보간 비교
@@ -293,7 +293,7 @@ XMFLOAT2 CatmullRom(XMFLOAT2 p0, XMFLOAT2 p1, XMFLOAT2 p2, XMFLOAT2 p3, float t)
 
 ---
 
-## 4. Scene03 — 행렬 변환과 투영 (2학기)
+## 4. Scene03 — 행렬 변환과 투영
 
 **서브모드:**
 - Q: TRS 행렬 분해 데모 (개별 변환 슬라이더)
@@ -339,7 +339,7 @@ XMMATRIX view = {
 
 ---
 
-## 5. Scene04 — Phong 조명 + Normal Mapping (3학기)
+## 5. Scene04 — Phong 조명 + Normal Mapping
 
 **오브젝트:** 구체(tessellation 없이 sphere 메시) + 바닥 평면.
 
@@ -464,7 +464,7 @@ float4 PS_NormalMap(VS_OUT_TBN i) : SV_Target {
 
 ---
 
-## 6. Scene05 — 스타일라이즈드 셰이딩 (3학기)
+## 6. Scene05 — 스타일라이즈드 셰이딩
 
 **서브모드:**
 - Q: Toon/Cell Shading (Ramp Texture 방식)
@@ -576,7 +576,7 @@ float4 PS_Hatching(VS_OUT i) : SV_Target {
 
 ---
 
-## 7. Scene06 — 절차적 노이즈 (4학기)
+## 7. Scene06 — 절차적 노이즈
 
 **서브모드:**
 - Q: Pseudo-Random (sin 기반)
@@ -703,7 +703,7 @@ float4 PS_Truchet(FullscreenVS_OUT i) : SV_Target {
 
 ---
 
-## 8. Scene07 — 포스트 프로세싱 (4학기)
+## 8. Scene07 — 포스트 프로세싱
 
 **렌더링 순서:**  
 1. 씬(구체+바닥 with Phong)을 HDR 렌더 타겟 (`DXGI_FORMAT_R16G16B16A16_FLOAT`)에 렌더  
@@ -839,7 +839,7 @@ float4 PS_BloomComposite(FullscreenVS_OUT i) : SV_Target {
 
 ---
 
-## 9. Scene08 — Deferred Shading (4학기)
+## 9. Scene08 — Deferred Shading
 
 ### 9.1 G-Buffer 구성
 
@@ -1126,4 +1126,4 @@ void DemoSceneManager::OnKeyDown(UINT vk) {
 
 ---
 
-*이 지침서는 4학기 오규환 교수 게임수학·셰이더 프로그래밍 커리큘럼의 핵심 개념을 D3D11 데모 하나에 집약한 구현 명세입니다. 모든 셰이더 코드는 DX11 HLSL 5.0 기준이며, CPU 사이드 코드는 DirectX Math (XMMATRIX 등)를 사용합니다.*
+*이 지침서는 게임수학·셰이더 프로그래밍의 핵심 개념을 D3D11 데모 하나에 집약한 구현 명세입니다. 모든 셰이더 코드는 DX11 HLSL 5.0 기준이며, CPU 사이드 코드는 DirectX Math (XMMATRIX 등)를 사용합니다.*

@@ -83,6 +83,7 @@
     <ClCompile Include="src\Scene\Scene05_StylizedShading.cpp" />
     <ClCompile Include="src\Scene\Scene06_ProceduralNoise.cpp" />
     <ClCompile Include="src\Scene\Scene07_PostProcessing.cpp" />
+    <ClCompile Include="src\Scene\Scene08_DeferredShading.cpp" />
     <ClCompile Include="src\Render\PrimitiveBatch3D.cpp" />
     <ClCompile Include="src\Render\ModelLoader.cpp" />
     <ClCompile Include="src\d3dApp.cpp" />
@@ -109,6 +110,7 @@
     <ClInclude Include="src\Scene\Scene05_StylizedShading.h" />
     <ClInclude Include="src\Scene\Scene06_ProceduralNoise.h" />
     <ClInclude Include="src\Scene\Scene07_PostProcessing.h" />
+    <ClInclude Include="src\Scene\Scene08_DeferredShading.h" />
     <ClInclude Include="src\Render\RenderTexture.h" />
     <ClInclude Include="src\Render\FullscreenPass.h" />
     <ClInclude Include="src\Render\ModelLoader.h" />
