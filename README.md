@@ -168,7 +168,7 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 | `R` Sobel | 오프스크린 렌더 → 전체화면 Sobel 엣지 (연필 스케치) |
 | `T` Hatching | 밝기별 절차적 사선 (펜화) |
 
-`.glb` 로딩은 단일 헤더 [`cgltf`](https://github.com/jkuhlmann/cgltf)(MIT)로 처리하며 **형상(위치·법선·UV)만** 사용합니다(텍스처 미사용). 오프스크린 RT/전체화면 패스는 [`src/Render/RenderTexture.h`](src/Render/RenderTexture.h)·[`FullscreenPass.h`](src/Render/FullscreenPass.h)로, 이후 포스트프로세싱 씬에서도 재사용됩니다.
+`.glb` 로딩은 단일 헤더 [`cgltf`](https://github.com/jkuhlmann/cgltf)(MIT)로, 임베드된 **base color 텍스처(PNG)는 [`stb_image`](https://github.com/nothings/stb)** 로 디코드해 머티리얼별 서브메시에 입힙니다. 머리카락·얼굴 등 투명부는 알파 테스트로 처리합니다. 오프스크린 RT/전체화면 패스는 [`src/Render/RenderTexture.h`](src/Render/RenderTexture.h)·[`FullscreenPass.h`](src/Render/FullscreenPass.h)로, 이후 포스트프로세싱 씬에서도 재사용됩니다.
 
 <table>
   <tr>
@@ -206,8 +206,9 @@ src/
 │   ├── ProceduralTexture.h          벽돌 디퓨즈/노말맵 절차 생성
 │   ├── RenderTexture.h              오프스크린 렌더 타겟
 │   ├── FullscreenPass.h             전체화면 삼각형 VS (포스트)
-│   ├── ModelLoader.{h,cpp}          .glb 로더 (cgltf 래퍼)
-│   └── cgltf.h                      단일 헤더 glTF 파서 (MIT, 외부)
+│   ├── ModelLoader.{h,cpp}          .glb 로더 (cgltf + stb_image, 머티리얼/텍스처)
+│   ├── cgltf.h                      단일 헤더 glTF 파서 (MIT, 외부)
+│   └── stb_image.h                  단일 헤더 이미지 디코더 (public domain, 외부)
 assets/
 └── character.glb                    VRoid 캐릭터 (Scene05)
 └── (프레임워크) d3dApp, d3dUtil, DXTrace, CpuTimer, Keyboard, Mouse, WinMin
@@ -224,7 +225,7 @@ assets/
 
 - 베이스 프레임워크(`d3dApp`, `Keyboard`, `Mouse`, `DXTrace` 등)는
   [MKXJun/DirectX11-With-Windows-SDK](https://github.com/MKXJun/DirectX11-With-Windows-SDK) (MIT License)를 기반으로 정리했습니다.
-- `.glb` 로딩은 [jkuhlmann/cgltf](https://github.com/jkuhlmann/cgltf) (MIT License) 단일 헤더를 사용합니다.
+- `.glb` 로딩은 [jkuhlmann/cgltf](https://github.com/jkuhlmann/cgltf) (MIT License), 텍스처(PNG) 디코딩은 [nothings/stb_image](https://github.com/nothings/stb) (public domain) 단일 헤더를 사용합니다.
 - Scene05의 캐릭터(`assets/character.glb`)는 저장소 소유자가 **VRoid Studio로 직접 제작**한 모델입니다.
 - 데모 설계 및 Scene 구현은 본 저장소에서 작성.
 

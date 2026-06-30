@@ -15,10 +15,24 @@ namespace
     const char g_Shader[] = R"(
 cbuffer CBFrame  : register(b0){ row_major float4x4 gViewProj; float3 gCamPos; float gTime; };
 cbuffer CBObject : register(b1){ row_major float4x4 gWorld; row_major float4x4 gWorldIT; };
-cbuffer CBMat    : register(b2){ float3 gLightDir; float gOutline; float4 gBase; float2 gTexel; float2 gPad; };
+cbuffer CBMat    : register(b2){
+    float3 gLightDir; float gOutline;
+    float4 gBase;
+    float2 gTexel; float gUseTex; float gAlphaTest;
+    float gCutoff; float3 gPad;
+};
+Texture2D gTex0 : register(t0);
+SamplerState gSamp : register(s0);
 
 struct VIn  { float3 pos:POSITION; float3 nor:NORMAL; float2 uv:TEXCOORD; float4 tan:TANGENT; };
 struct VOut { float4 svpos:SV_Position; float3 wnor:TEXCOORD0; float3 wpos:TEXCOORD1; float2 uv:TEXCOORD2; };
+
+float4 Albedo(float2 uv)
+{
+    float4 a = gBase;
+    if (gUseTex > 0.5) a *= gTex0.Sample(gSamp, uv);
+    return a;
+}
 
 VOut VSMain(VIn v){
     VOut o; float4 wp = mul(float4(v.pos,1), gWorld);
@@ -35,22 +49,31 @@ VOut VSOutline(VIn v){
 float Lum(float3 c){ return dot(c, float3(0.299,0.587,0.114)); }
 
 float4 PSToon(VOut i):SV_Target{
+    float4 alb=Albedo(i.uv);
+    if(gAlphaTest>0.5) clip(alb.a-gCutoff);
     float3 N=normalize(i.wnor); float3 L=normalize(-gLightDir);
     float ndl=max(dot(N,L),0);
-    float band = ndl>0.66 ? 1.0 : (ndl>0.33 ? 0.62 : 0.32);
-    float3 col = gBase.rgb*band;
+    float band = ndl>0.66 ? 1.0 : (ndl>0.33 ? 0.7 : 0.45);
+    float3 col = alb.rgb*band;
     float3 V=normalize(gCamPos-i.wpos);
-    col += pow(1-saturate(dot(N,V)),3)*0.25;     // 림
+    col += pow(1-saturate(dot(N,V)),4)*0.15;     // 림
     return float4(col,1);
 }
 float4 PSFlat(VOut i):SV_Target{
+    float4 alb=Albedo(i.uv);
+    if(gAlphaTest>0.5) clip(alb.a-gCutoff);
     float3 N=normalize(i.wnor); float3 L=normalize(-gLightDir);
-    float d=max(dot(N,L),0)*0.85+0.15;
-    return float4(gBase.rgb*d,1);
+    float d=max(dot(N,L),0)*0.8+0.2;
+    return float4(alb.rgb*d,1);
 }
-float4 PSOutline(VOut i):SV_Target{ return float4(0.02,0.02,0.03,1); }
+float4 PSOutline(VOut i):SV_Target{
+    if(gAlphaTest>0.5){ float a=gBase.a; if(gUseTex>0.5) a*=gTex0.Sample(gSamp,i.uv).a; clip(a-gCutoff); }
+    return float4(0.02,0.02,0.03,1);
+}
 
 float4 PSHatch(VOut i):SV_Target{
+    float4 alb=Albedo(i.uv);
+    if(gAlphaTest>0.5) clip(alb.a-gCutoff);
     float3 N=normalize(i.wnor); float3 L=normalize(-gLightDir);
     float lum=max(dot(N,L),0);
     float2 sp=i.svpos.xy; float h=1.0;
@@ -64,18 +87,17 @@ float4 PSHatch(VOut i):SV_Target{
     return float4(col,1);
 }
 
-Texture2D gScene:register(t0); SamplerState gSamp:register(s0);
 struct FQ{ float4 pos:SV_Position; float2 uv:TEXCOORD0; };
 float4 PSSobel(FQ i):SV_Target{
     float2 ts=gTexel;
-    float tl=Lum(gScene.Sample(gSamp,i.uv+ts*float2(-1,-1)).rgb);
-    float  l=Lum(gScene.Sample(gSamp,i.uv+ts*float2(-1, 0)).rgb);
-    float bl=Lum(gScene.Sample(gSamp,i.uv+ts*float2(-1, 1)).rgb);
-    float  t=Lum(gScene.Sample(gSamp,i.uv+ts*float2( 0,-1)).rgb);
-    float  b=Lum(gScene.Sample(gSamp,i.uv+ts*float2( 0, 1)).rgb);
-    float tr=Lum(gScene.Sample(gSamp,i.uv+ts*float2( 1,-1)).rgb);
-    float  r=Lum(gScene.Sample(gSamp,i.uv+ts*float2( 1, 0)).rgb);
-    float br=Lum(gScene.Sample(gSamp,i.uv+ts*float2( 1, 1)).rgb);
+    float tl=Lum(gTex0.Sample(gSamp,i.uv+ts*float2(-1,-1)).rgb);
+    float  l=Lum(gTex0.Sample(gSamp,i.uv+ts*float2(-1, 0)).rgb);
+    float bl=Lum(gTex0.Sample(gSamp,i.uv+ts*float2(-1, 1)).rgb);
+    float  t=Lum(gTex0.Sample(gSamp,i.uv+ts*float2( 0,-1)).rgb);
+    float  b=Lum(gTex0.Sample(gSamp,i.uv+ts*float2( 0, 1)).rgb);
+    float tr=Lum(gTex0.Sample(gSamp,i.uv+ts*float2( 1,-1)).rgb);
+    float  r=Lum(gTex0.Sample(gSamp,i.uv+ts*float2( 1, 0)).rgb);
+    float br=Lum(gTex0.Sample(gSamp,i.uv+ts*float2( 1, 1)).rgb);
     float gx=-tl-2*l-bl+tr+2*r+br;
     float gy= tl+2*t+tr-bl-2*b-br;
     float e=saturate(sqrt(gx*gx+gy*gy)*1.6);
@@ -85,7 +107,12 @@ float4 PSSobel(FQ i):SV_Target{
 
     struct CBFrame { XMMATRIX viewProj; XMFLOAT3 camPos; float time; };
     struct CBObject { XMMATRIX world; XMMATRIX worldIT; };
-    struct CBMat { XMFLOAT3 lightDir; float outline; XMFLOAT4 base; XMFLOAT2 texel; XMFLOAT2 pad; };
+    struct CBMat {
+        XMFLOAT3 lightDir; float outline;
+        XMFLOAT4 base;
+        XMFLOAT2 texel; float useTex; float alphaTest;
+        float cutoff; XMFLOAT3 pad;
+    };
 
     std::string ExeRelative(const char* rel)
     {
@@ -169,23 +196,49 @@ void Scene05_StylizedShading::Init(const SceneContext& ctx)
 
     m_fs.Init(d);
 
-    // 모델 로드
-    MeshData mesh; XMFLOAT3 mn, mx;
+    // 모델 로드 (머티리얼별 서브메시 + base color 텍스처)
+    model::Model mdl;
     std::string path = ExeRelative("assets\\character.glb");
-    if (model::LoadGLB(path.c_str(), mesh, mn, mx) && !mesh.vertices.empty())
+    if (model::LoadGLB(path.c_str(), mdl) && !mdl.subs.empty())
     {
-        D3D11_BUFFER_DESC vbd = {}; vbd.Usage = D3D11_USAGE_IMMUTABLE;
-        vbd.ByteWidth = (UINT)(mesh.vertices.size() * sizeof(VertexPNUT)); vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-        D3D11_SUBRESOURCE_DATA vsd = {}; vsd.pSysMem = mesh.vertices.data();
-        d->CreateBuffer(&vbd, &vsd, m_vb.GetAddressOf());
+        // 디코드된 이미지 → SRV
+        m_texSRVs.resize(mdl.images.size());
+        for (size_t i = 0; i < mdl.images.size(); ++i)
+        {
+            const auto& im = mdl.images[i];
+            D3D11_TEXTURE2D_DESC td = {};
+            td.Width = im.w; td.Height = im.h; td.MipLevels = 1; td.ArraySize = 1;
+            td.Format = DXGI_FORMAT_R8G8B8A8_UNORM; td.SampleDesc.Count = 1;
+            td.Usage = D3D11_USAGE_IMMUTABLE; td.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            D3D11_SUBRESOURCE_DATA sd = {}; sd.pSysMem = im.rgba.data(); sd.SysMemPitch = im.w * 4;
+            ComPtr<ID3D11Texture2D> t;
+            if (SUCCEEDED(d->CreateTexture2D(&td, &sd, t.GetAddressOf())))
+                d->CreateShaderResourceView(t.Get(), nullptr, m_texSRVs[i].GetAddressOf());
+        }
 
-        D3D11_BUFFER_DESC ibd = {}; ibd.Usage = D3D11_USAGE_IMMUTABLE;
-        ibd.ByteWidth = (UINT)(mesh.indices.size() * sizeof(unsigned int)); ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-        D3D11_SUBRESOURCE_DATA isd = {}; isd.pSysMem = mesh.indices.data();
-        d->CreateBuffer(&ibd, &isd, m_ib.GetAddressOf());
-        m_indexCount = (UINT)mesh.indices.size();
+        for (const auto& sub : mdl.subs)
+        {
+            GpuSub g;
+            D3D11_BUFFER_DESC vbd = {}; vbd.Usage = D3D11_USAGE_IMMUTABLE;
+            vbd.ByteWidth = (UINT)(sub.vertices.size() * sizeof(VertexPNUT)); vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+            D3D11_SUBRESOURCE_DATA vsd = {}; vsd.pSysMem = sub.vertices.data();
+            d->CreateBuffer(&vbd, &vsd, g.vb.GetAddressOf());
+
+            D3D11_BUFFER_DESC ibd = {}; ibd.Usage = D3D11_USAGE_IMMUTABLE;
+            ibd.ByteWidth = (UINT)(sub.indices.size() * sizeof(unsigned int)); ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+            D3D11_SUBRESOURCE_DATA isd = {}; isd.pSysMem = sub.indices.data();
+            d->CreateBuffer(&ibd, &isd, g.ib.GetAddressOf());
+
+            g.count = (UINT)sub.indices.size();
+            g.imageIndex = sub.imageIndex;
+            g.base = sub.baseColor;
+            g.alphaTest = sub.alphaTest;
+            g.cutoff = sub.alphaCutoff;
+            m_subs.push_back(std::move(g));
+        }
 
         // 모델 맞추기: 중심을 원점으로, 높이 2.4로 스케일, 발을 y=0에
+        XMFLOAT3 mn = mdl.min, mx = mdl.max;
         XMFLOAT3 c = { (mn.x + mx.x) * 0.5f, (mn.y + mx.y) * 0.5f, (mn.z + mx.z) * 0.5f };
         float height = (mx.y - mn.y); if (height < 1e-3f) height = 1.0f;
         float s = 2.4f / height;
@@ -250,8 +303,6 @@ void Scene05_StylizedShading::DrawModel(ID3D11DeviceContext* c, ID3D11VertexShad
     UINT stride = sizeof(VertexPNUT), offset = 0;
     c->IASetInputLayout(m_layout.Get());
     c->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    c->IASetVertexBuffers(0, 1, m_vb.GetAddressOf(), &stride, &offset);
-    c->IASetIndexBuffer(m_ib.Get(), DXGI_FORMAT_R32_UINT, 0);
     c->VSSetShader(vs, nullptr, 0);
     c->PSSetShader(ps, nullptr, 0);
     c->VSSetConstantBuffers(0, 1, m_cbFrame.GetAddressOf());
@@ -259,8 +310,36 @@ void Scene05_StylizedShading::DrawModel(ID3D11DeviceContext* c, ID3D11VertexShad
     c->VSSetConstantBuffers(2, 1, m_cbMat.GetAddressOf());
     c->PSSetConstantBuffers(0, 1, m_cbFrame.GetAddressOf());
     c->PSSetConstantBuffers(2, 1, m_cbMat.GetAddressOf());
+    c->PSSetSamplers(0, 1, m_samp.GetAddressOf());
     c->RSSetState(rs);
-    c->DrawIndexed(m_indexCount, 0, 0);
+
+    XMVECTOR ld = XMVector3Normalize(XMVectorSet(-0.3f, -0.6f, -0.55f, 0));
+    XMFLOAT3 lightDir; XMStoreFloat3(&lightDir, ld);
+
+    for (const auto& g : m_subs)
+    {
+        ID3D11ShaderResourceView* srv = (g.imageIndex >= 0 && g.imageIndex < (int)m_texSRVs.size())
+            ? m_texSRVs[g.imageIndex].Get() : nullptr;
+
+        D3D11_MAPPED_SUBRESOURCE m;
+        if (SUCCEEDED(c->Map(m_cbMat.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &m)))
+        {
+            CBMat* mat = (CBMat*)m.pData;
+            mat->lightDir = lightDir;
+            mat->outline = 0.02f;
+            mat->base = g.base;
+            mat->texel = m_texel;
+            mat->useTex = srv ? 1.0f : 0.0f;
+            mat->alphaTest = g.alphaTest ? 1.0f : 0.0f;
+            mat->cutoff = g.cutoff;
+            mat->pad = { 0,0,0 };
+            c->Unmap(m_cbMat.Get(), 0);
+        }
+        c->PSSetShaderResources(0, 1, &srv);
+        c->IASetVertexBuffers(0, 1, g.vb.GetAddressOf(), &stride, &offset);
+        c->IASetIndexBuffer(g.ib.Get(), DXGI_FORMAT_R32_UINT, 0);
+        c->DrawIndexed(g.count, 0, 0);
+    }
 }
 
 void Scene05_StylizedShading::Render(const SceneContext& ctx)
@@ -268,51 +347,46 @@ void Scene05_StylizedShading::Render(const SceneContext& ctx)
     if (!m_inited || !m_modelOK) return;
     ID3D11DeviceContext* c = ctx.context;
     UpdateFrameCB(ctx);
-
-    // CBMat
-    D3D11_MAPPED_SUBRESOURCE m;
-    if (SUCCEEDED(c->Map(m_cbMat.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &m)))
-    {
-        CBMat* mat = (CBMat*)m.pData;
-        XMVECTOR ld = XMVector3Normalize(XMVectorSet(-0.3f, -0.6f, -0.55f, 0));
-        XMStoreFloat3(&mat->lightDir, ld);
-        mat->outline = 0.02f;
-        mat->base = { 0.62f, 0.66f, 0.78f, 1.0f };
-        mat->texel = { 1.0f / ctx.screenWidth, 1.0f / ctx.screenHeight };
-        mat->pad = { 0,0 };
-        c->Unmap(m_cbMat.Get(), 0);
-    }
+    m_texel = { 1.0f / ctx.screenWidth, 1.0f / ctx.screenHeight };
 
     c->OMSetDepthStencilState(m_depthOn.Get(), 0);
     c->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
 
     if (m_mode == 0)         // Toon
-        DrawModel(c, m_vsMain.Get(), m_psToon.Get(), m_rsBack.Get());
+        DrawModel(c, m_vsMain.Get(), m_psToon.Get(), m_rsNone.Get());
     else if (m_mode == 1)    // Outline + Flat
     {
         DrawModel(c, m_vsOutline.Get(), m_psOutline.Get(), m_rsFront.Get());
-        DrawModel(c, m_vsMain.Get(), m_psFlat.Get(), m_rsBack.Get());
+        DrawModel(c, m_vsMain.Get(), m_psFlat.Get(), m_rsNone.Get());
     }
     else if (m_mode == 2)    // Toon + Outline
     {
         DrawModel(c, m_vsOutline.Get(), m_psOutline.Get(), m_rsFront.Get());
-        DrawModel(c, m_vsMain.Get(), m_psToon.Get(), m_rsBack.Get());
+        DrawModel(c, m_vsMain.Get(), m_psToon.Get(), m_rsNone.Get());
     }
     else if (m_mode == 4)    // Hatching
-        DrawModel(c, m_vsMain.Get(), m_psHatch.Get(), m_rsBack.Get());
+        DrawModel(c, m_vsMain.Get(), m_psHatch.Get(), m_rsNone.Get());
     else if (m_mode == 3)    // Sobel (오프스크린 → 풀스크린)
     {
         if (m_rt.EnsureSize(ctx.device, ctx.screenWidth, ctx.screenHeight))
         {
             float clear[4] = { 0.55f, 0.57f, 0.62f, 1.0f };
             m_rt.Begin(c, clear);
-            DrawModel(c, m_vsMain.Get(), m_psFlat.Get(), m_rsBack.Get());
+            DrawModel(c, m_vsMain.Get(), m_psFlat.Get(), m_rsNone.Get());
 
             // 백버퍼로 복귀
             c->OMSetRenderTargets(1, &ctx.backRTV, ctx.backDSV);
             D3D11_VIEWPORT vp{}; vp.Width = (float)ctx.screenWidth; vp.Height = (float)ctx.screenHeight; vp.MaxDepth = 1.0f;
             c->RSSetViewports(1, &vp);
 
+            // Sobel용 CBMat (texel만 필요)
+            D3D11_MAPPED_SUBRESOURCE m;
+            if (SUCCEEDED(c->Map(m_cbMat.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &m)))
+            {
+                CBMat* mat = (CBMat*)m.pData; *mat = {};
+                mat->texel = m_texel;
+                c->Unmap(m_cbMat.Get(), 0);
+            }
             c->OMSetDepthStencilState(m_depthOff.Get(), 0);
             c->RSSetState(m_rsNone.Get());
             c->PSSetShader(m_psSobel.Get(), nullptr, 0);
@@ -333,6 +407,6 @@ std::wstring Scene05_StylizedShading::HudText() const
         return L"[오류] assets/character.glb 를 찾을 수 없습니다. (exe 옆 assets 폴더 확인)";
     std::wstring s = L"서브모드:  Q=Toon  W=Outline  E=Toon+Outline  R=Sobel  T=Hatching   |   드래그:공전 휠:줌\n";
     const wchar_t* n[] = { L"Toon(셀 셰이딩)", L"Outline(뒷면 확장)", L"Toon+Outline", L"Sobel 엣지(스케치)", L"Hatching(사선)" };
-    s += L"[현재: "; s += n[m_mode]; s += L"]  대상: VRoid 캐릭터(.glb, 형상만 — 텍스처 미사용)";
+    s += L"[현재: "; s += n[m_mode]; s += L"]  대상: VRoid 캐릭터(.glb, base color 텍스처 적용)";
     return s;
 }

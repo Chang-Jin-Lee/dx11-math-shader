@@ -16,6 +16,7 @@
 #include "../Render/FullscreenPass.h"
 #include <wrl/client.h>
 #include <DirectXMath.h>
+#include <vector>
 
 class Scene05_StylizedShading : public IScene
 {
@@ -28,6 +29,16 @@ public:
 
 private:
     template <class T> using ComPtr = Microsoft::WRL::ComPtr<T>;
+
+    struct GpuSub
+    {
+        ComPtr<ID3D11Buffer> vb, ib;
+        UINT count = 0;
+        int  imageIndex = -1;
+        DirectX::XMFLOAT4 base = { 1,1,1,1 };
+        bool  alphaTest = false;
+        float cutoff = 0.5f;
+    };
 
     void DrawModel(ID3D11DeviceContext* c, ID3D11VertexShader* vs, ID3D11PixelShader* ps, ID3D11RasterizerState* rs);
     void UpdateFrameCB(const SceneContext& ctx);
@@ -46,8 +57,9 @@ private:
     ComPtr<ID3D11VertexShader> m_vsMain, m_vsOutline;
     ComPtr<ID3D11PixelShader>  m_psToon, m_psOutline, m_psFlat, m_psHatch, m_psSobel;
     ComPtr<ID3D11Buffer> m_cbFrame, m_cbObject, m_cbMat;
-    ComPtr<ID3D11Buffer> m_vb, m_ib;
-    UINT m_indexCount = 0;
+    std::vector<GpuSub> m_subs;
+    std::vector<ComPtr<ID3D11ShaderResourceView>> m_texSRVs;
+    DirectX::XMFLOAT2 m_texel = { 1.0f / 1280, 1.0f / 720 };
 
     ComPtr<ID3D11RasterizerState> m_rsBack, m_rsFront, m_rsNone;
     ComPtr<ID3D11DepthStencilState> m_depthOn, m_depthOff;

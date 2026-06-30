@@ -109,6 +109,7 @@
     <ClInclude Include="src\Render\FullscreenPass.h" />
     <ClInclude Include="src\Render\ModelLoader.h" />
     <ClInclude Include="src\Render\cgltf.h" />
+    <ClInclude Include="src\Render\stb_image.h" />
     <ClInclude Include="src\d3dApp.h" />
     <ClInclude Include="src\d3dUtil.h" />
     <ClInclude Include="src\DXTrace.h" />
