@@ -358,7 +358,7 @@ void Scene05_StylizedShading::DrawModel(ID3D11DeviceContext* c, ID3D11VertexShad
         {
             CBMat* mat = (CBMat*)m.pData;
             mat->lightDir = lightDir;
-            mat->outline = 0.012f;
+            mat->outline = 0.006f;
             mat->base = g.base;
             mat->texel = m_texel;
             mat->useTex = srv ? 1.0f : 0.0f;
