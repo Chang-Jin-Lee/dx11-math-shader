@@ -55,6 +55,29 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 
 충돌·반사·내부판별 수식은 [`src/Math/Collision2D.h`](src/Math/Collision2D.h)에 순수 함수로 분리되어 있어 그대로 재사용·검증할 수 있습니다.
 
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img width="420" src="docs/images/scene01/scene01_aabb.png" alt="AABB 충돌" /><br/>
+      <sub><b>Q</b> · AABB 충돌 — 겹치면 빨강, 아니면 초록</sub>
+    </td>
+    <td align="center" width="50%">
+      <img width="420" src="docs/images/scene01/scene01_obb.png" alt="OBB SAT 충돌" /><br/>
+      <sub><b>W</b> · OBB 충돌 — SAT(분리축 정리), 회전 박스</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img width="420" src="docs/images/scene01/scene01_motion.png" alt="운동" /><br/>
+      <sub><b>E</b> · 운동 — 원형·타원·정현파·나선 + 궤도 경로</sub>
+    </td>
+    <td align="center" width="50%">
+      <img width="420" src="docs/images/scene01/scene01_reflect.png" alt="반사·다각형" /><br/>
+      <sub><b>R</b> · 반사 — 벽 반사 벡터 + 볼록 다각형 내부 판별</sub>
+    </td>
+  </tr>
+</table>
+
 ---
 
 ## 아키텍처
