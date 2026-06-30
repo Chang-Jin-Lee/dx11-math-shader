@@ -56,6 +56,7 @@ private:
     ComPtr<ID3D11InputLayout> m_layout;
     ComPtr<ID3D11VertexShader> m_vsMain, m_vsOutline;
     ComPtr<ID3D11PixelShader>  m_psToon, m_psOutline, m_psFlat, m_psHatch, m_psSobel;
+    ComPtr<ID3D11PixelShader>  m_psNormalDepth, m_psSobelOutline;
     ComPtr<ID3D11Buffer> m_cbFrame, m_cbObject, m_cbMat;
     std::vector<GpuSub> m_subs;
     std::vector<ComPtr<ID3D11ShaderResourceView>> m_texSRVs;
@@ -65,6 +66,7 @@ private:
     ComPtr<ID3D11DepthStencilState> m_depthOn, m_depthOff;
     ComPtr<ID3D11SamplerState> m_samp;
 
-    RenderTexture   m_rt;
+    RenderTexture   m_rt;     // Sobel 색/스케치
+    RenderTexture   m_rtNrm;  // 노말+깊이 (Sobel 외곽선)
     FullscreenPass  m_fs;
 };

@@ -22,6 +22,7 @@ cbuffer CBMat    : register(b2){
     float gCutoff; float3 gPad;
 };
 Texture2D gTex0 : register(t0);
+Texture2D gTex1 : register(t1);
 SamplerState gSamp : register(s0);
 
 struct VIn  { float3 pos:POSITION; float3 nor:NORMAL; float2 uv:TEXCOORD; float4 tan:TANGENT; };
@@ -40,8 +41,9 @@ VOut VSMain(VIn v){
     o.wnor = mul(v.nor, (float3x3)gWorldIT); o.uv = v.uv; return o;
 }
 VOut VSOutline(VIn v){
-    VOut o; float3 wn = normalize(mul(v.nor, (float3x3)gWorld));
-    float4 wp = mul(float4(v.pos,1), gWorld); wp.xyz += wn * gOutline;
+    // 스무스 노말(tangent.xyz = 같은 위치 정점 법선 평균)로 밀어내 외피를 하나로 용접
+    VOut o; float3 sn = normalize(mul(v.tan.xyz, (float3x3)gWorld));
+    float4 wp = mul(float4(v.pos,1), gWorld); wp.xyz += sn * gOutline;
     o.wpos = wp.xyz; o.svpos = mul(wp, gViewProj);
     o.wnor = normalize(mul(v.nor,(float3x3)gWorldIT)); o.uv = v.uv; return o;
 }
@@ -87,7 +89,34 @@ float4 PSHatch(VOut i):SV_Target{
     return float4(col,1);
 }
 
+// 노말+깊이를 오프스크린에 기록 (Sobel 외곽선용). rgb=월드노말, a=카메라 거리
+float4 PSNormalDepth(VOut i):SV_Target{
+    float4 alb=Albedo(i.uv);
+    if(gAlphaTest>0.5) clip(alb.a-gCutoff);
+    float3 N=normalize(i.wnor);
+    float dist=length(gCamPos - i.wpos);
+    return float4(N*0.5+0.5, dist);
+}
+
 struct FQ{ float4 pos:SV_Position; float2 uv:TEXCOORD0; };
+
+// 깊이·법선 불연속을 검출해 외곽선을 합성 (gTex0=색, gTex1=노말+깊이)
+float4 PSSobelOutline(FQ i):SV_Target{
+    float3 col = gTex0.Sample(gSamp,i.uv).rgb;
+    float2 ts = gTexel;
+    float4 c =gTex1.Sample(gSamp,i.uv);
+    float4 r =gTex1.Sample(gSamp,i.uv+float2(ts.x,0));
+    float4 l =gTex1.Sample(gSamp,i.uv-float2(ts.x,0));
+    float4 u =gTex1.Sample(gSamp,i.uv+float2(0,ts.y));
+    float4 dn=gTex1.Sample(gSamp,i.uv-float2(0,ts.y));
+    float3 nC=c.xyz*2-1, nR=r.xyz*2-1, nL=l.xyz*2-1, nU=u.xyz*2-1, nD=dn.xyz*2-1;
+    float dN = (1-saturate(dot(nC,nR)))+(1-saturate(dot(nC,nL)))+(1-saturate(dot(nC,nU)))+(1-saturate(dot(nC,nD)));
+    float dD = abs(c.a-r.a)+abs(c.a-l.a)+abs(c.a-u.a)+abs(c.a-dn.a);
+    float e = saturate(dN*1.3 + dD*4.0);
+    e = smoothstep(0.25, 0.6, e);
+    return float4(lerp(col, float3(0.02,0.02,0.03), e), 1);
+}
+
 float4 PSSobel(FQ i):SV_Target{
     float2 ts=gTexel;
     float tl=Lum(gTex0.Sample(gSamp,i.uv+ts*float2(-1,-1)).rgb);
@@ -174,6 +203,8 @@ void Scene05_StylizedShading::Init(const SceneContext& ctx)
     m_psFlat.Attach(MakePS(d, "PSFlat"));
     m_psHatch.Attach(MakePS(d, "PSHatch"));
     m_psSobel.Attach(MakePS(d, "PSSobel"));
+    m_psNormalDepth.Attach(MakePS(d, "PSNormalDepth"));
+    m_psSobelOutline.Attach(MakePS(d, "PSSobelOutline"));
 
     m_cbFrame.Attach(DynCB(d, sizeof(CBFrame)));
     m_cbObject.Attach(DynCB(d, sizeof(CBObject)));
@@ -264,6 +295,7 @@ void Scene05_StylizedShading::Update(const SceneContext& ctx, float dt)
         else if (kt->IsKeyPressed(Keyboard::E)) m_mode = 2;
         else if (kt->IsKeyPressed(Keyboard::R)) m_mode = 3;
         else if (kt->IsKeyPressed(Keyboard::T)) m_mode = 4;
+        else if (kt->IsKeyPressed(Keyboard::Y)) m_mode = 5;
     }
     int mx = ctx.mouse.x, my = ctx.mouse.y;
     if (ctx.mouse.leftButton)
@@ -326,7 +358,7 @@ void Scene05_StylizedShading::DrawModel(ID3D11DeviceContext* c, ID3D11VertexShad
         {
             CBMat* mat = (CBMat*)m.pData;
             mat->lightDir = lightDir;
-            mat->outline = 0.02f;
+            mat->outline = 0.012f;
             mat->base = g.base;
             mat->texel = m_texel;
             mat->useTex = srv ? 1.0f : 0.0f;
@@ -399,14 +431,54 @@ void Scene05_StylizedShading::Render(const SceneContext& ctx)
             c->PSSetShaderResources(0, 1, &nullSRV);
         }
     }
+    else if (m_mode == 5)    // Toon + Sobel 외곽선 (깊이·법선 불연속)
+    {
+        int W = ctx.screenWidth, H = ctx.screenHeight;
+        if (m_rt.EnsureSize(ctx.device, W, H) &&
+            m_rtNrm.EnsureSize(ctx.device, W, H, DXGI_FORMAT_R16G16B16A16_FLOAT, true))
+        {
+            // 1) 툰 색 → m_rt
+            float bg[4] = { 0.07f, 0.08f, 0.10f, 1.0f };
+            m_rt.Begin(c, bg);
+            c->OMSetDepthStencilState(m_depthOn.Get(), 0);
+            DrawModel(c, m_vsMain.Get(), m_psToon.Get(), m_rsNone.Get());
+            // 2) 노말+깊이 → m_rtNrm (배경 깊이는 크게 → 실루엣 검출)
+            float clrN[4] = { 0.5f, 0.5f, 0.5f, 1000.0f };
+            m_rtNrm.Begin(c, clrN);
+            c->OMSetDepthStencilState(m_depthOn.Get(), 0);
+            DrawModel(c, m_vsMain.Get(), m_psNormalDepth.Get(), m_rsNone.Get());
+
+            // 3) 백버퍼로 복귀 + Sobel 외곽선 합성
+            c->OMSetRenderTargets(1, &ctx.backRTV, ctx.backDSV);
+            D3D11_VIEWPORT vp{}; vp.Width = (float)W; vp.Height = (float)H; vp.MaxDepth = 1.0f;
+            c->RSSetViewports(1, &vp);
+            D3D11_MAPPED_SUBRESOURCE m;
+            if (SUCCEEDED(c->Map(m_cbMat.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &m)))
+            {
+                CBMat* mat = (CBMat*)m.pData; *mat = {}; mat->texel = m_texel;
+                c->Unmap(m_cbMat.Get(), 0);
+            }
+            c->OMSetDepthStencilState(m_depthOff.Get(), 0);
+            c->RSSetState(m_rsNone.Get());
+            c->PSSetShader(m_psSobelOutline.Get(), nullptr, 0);
+            c->PSSetConstantBuffers(2, 1, m_cbMat.GetAddressOf());
+            ID3D11ShaderResourceView* srvs[2] = { m_rt.SRV(), m_rtNrm.SRV() };
+            c->PSSetShaderResources(0, 2, srvs);
+            c->PSSetSamplers(0, 1, m_samp.GetAddressOf());
+            m_fs.Draw(c);
+            ID3D11ShaderResourceView* nn[2] = { nullptr, nullptr };
+            c->PSSetShaderResources(0, 2, nn);
+        }
+    }
 }
 
 std::wstring Scene05_StylizedShading::HudText() const
 {
     if (!m_modelOK)
         return L"[오류] assets/character.glb 를 찾을 수 없습니다. (exe 옆 assets 폴더 확인)";
-    std::wstring s = L"서브모드:  Q=Toon  W=Outline  E=Toon+Outline  R=Sobel  T=Hatching   |   드래그:공전 휠:줌\n";
-    const wchar_t* n[] = { L"Toon(셀 셰이딩)", L"Outline(뒷면 확장)", L"Toon+Outline", L"Sobel 엣지(스케치)", L"Hatching(사선)" };
+    std::wstring s = L"서브모드:  Q=Toon  W=Outline  E=Toon+Outline  R=Sobel  T=Hatching  Y=Sobel외곽선   |   드래그:공전 휠:줌\n";
+    const wchar_t* n[] = { L"Toon(셀 셰이딩)", L"Outline(뒷면 확장, 스무스 노말)", L"Toon+Outline",
+                           L"Sobel 엣지(스케치)", L"Hatching(사선)", L"Toon + Sobel 외곽선(깊이·법선 검출)" };
     s += L"[현재: "; s += n[m_mode]; s += L"]  대상: VRoid 캐릭터(.glb, base color 텍스처 적용)";
     return s;
 }

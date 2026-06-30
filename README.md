@@ -163,20 +163,26 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 | 서브모드 | 내용 |
 |----------|------|
 | `Q` Toon | 밝기를 단계로 양자화한 셀 셰이딩 + 림 |
-| `W` Outline | 뒷면을 노멀 방향으로 확장한 외곽선 + 일반 셰이딩 |
+| `W` Outline | 뒷면을 **스무스 노말**(같은 위치 정점 법선 평균) 방향으로 확장한 외곽선 |
 | `E` Toon+Outline | 셀 셰이딩 + 외곽선 (애니메 룩) |
 | `R` Sobel | 오프스크린 렌더 → 전체화면 Sobel 엣지 (연필 스케치) |
 | `T` Hatching | 밝기별 절차적 사선 (펜화) |
+| `Y` Toon + Sobel 외곽선 | **깊이·법선 불연속**을 검출하는 외곽선 — 실루엣 + 내부 주름선 |
 
-`.glb` 로딩은 단일 헤더 [`cgltf`](https://github.com/jkuhlmann/cgltf)(MIT)로, 임베드된 **base color 텍스처(PNG)는 [`stb_image`](https://github.com/nothings/stb)** 로 디코드해 머티리얼별 서브메시에 입힙니다. 머리카락·얼굴 등 투명부는 알파 테스트로 처리합니다. 오프스크린 RT/전체화면 패스는 [`src/Render/RenderTexture.h`](src/Render/RenderTexture.h)·[`FullscreenPass.h`](src/Render/FullscreenPass.h)로, 이후 포스트프로세싱 씬에서도 재사용됩니다.
+`.glb` 로딩은 단일 헤더 [`cgltf`](https://github.com/jkuhlmann/cgltf)(MIT)로, 임베드된 **base color 텍스처(PNG)는 [`stb_image`](https://github.com/nothings/stb)** 로 디코드해 머티리얼별 서브메시에 입힙니다. 머리카락·얼굴 등 투명부는 알파 테스트로 처리합니다.
+
+> **외곽선 두 방식 비교**: `W`/`E`는 뒷면을 밀어내는 방식인데, 분리 법선 때문에 입·밀집부에서 갈라지기 쉬워 **스무스 노말로 외피를 용접**하고 두께를 줄였습니다. `Y`는 후처리 **Sobel(깊이·법선)** 방식이라 밀어내기 아티팩트가 없고 내부 엣지까지 잡습니다.
 
 <table>
   <tr>
-    <td align="center" width="20%"><img width="190" src="docs/images/scene05/scene05_toon.png" alt="Toon" /><br/><sub><b>Q</b> Toon</sub></td>
-    <td align="center" width="20%"><img width="190" src="docs/images/scene05/scene05_outline.png" alt="Outline" /><br/><sub><b>W</b> Outline</sub></td>
-    <td align="center" width="20%"><img width="190" src="docs/images/scene05/scene05_toon_outline.png" alt="Toon+Outline" /><br/><sub><b>E</b> Toon+Outline</sub></td>
-    <td align="center" width="20%"><img width="190" src="docs/images/scene05/scene05_sobel.png" alt="Sobel" /><br/><sub><b>R</b> Sobel</sub></td>
-    <td align="center" width="20%"><img width="190" src="docs/images/scene05/scene05_hatching.png" alt="Hatching" /><br/><sub><b>T</b> Hatching</sub></td>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_toon.png" alt="Toon" /><br/><sub><b>Q</b> Toon</sub></td>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_outline.png" alt="Outline" /><br/><sub><b>W</b> Outline(스무스 노말)</sub></td>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_toon_outline.png" alt="Toon+Outline" /><br/><sub><b>E</b> Toon+Outline</sub></td>
+  </tr>
+  <tr>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_sobel_outline.png" alt="Sobel Outline" /><br/><sub><b>Y</b> Sobel 외곽선(깊이·법선)</sub></td>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_sobel.png" alt="Sobel" /><br/><sub><b>R</b> Sobel(스케치)</sub></td>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_hatching.png" alt="Hatching" /><br/><sub><b>T</b> Hatching</sub></td>
   </tr>
 </table>
 

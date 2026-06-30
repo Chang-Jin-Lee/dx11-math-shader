@@ -9,6 +9,7 @@
 #include "ModelLoader.h"
 #include <DirectXMath.h>
 #include <unordered_map>
+#include <cmath>
 
 using namespace DirectX;
 
@@ -139,6 +140,29 @@ namespace model
                     sub.vertices.push_back(v);
                     vmin = XMVectorMin(vmin, wp);
                     vmax = XMVectorMax(vmax, wp);
+                }
+
+                // --- 아웃라인용 스무스 노말: 같은 위치의 정점 법선을 평균내 tangent.xyz에 저장 ---
+                // (분리 법선으로 인한 외곽선 갈라짐 방지)
+                {
+                    std::unordered_map<long long, XMFLOAT3> accum;
+                    auto keyOf = [](const XMFLOAT3& p) -> long long {
+                        long long x = (long long)std::llround(p.x * 1000.0f);
+                        long long y = (long long)std::llround(p.y * 1000.0f);
+                        long long z = (long long)std::llround(p.z * 1000.0f);
+                        return (x * 73856093LL) ^ (y * 19349663LL) ^ (z * 83492791LL);
+                    };
+                    for (auto& v : sub.vertices) {
+                        long long k = keyOf(v.pos);
+                        XMFLOAT3& a = accum[k];
+                        a.x += v.normal.x; a.y += v.normal.y; a.z += v.normal.z;
+                    }
+                    for (auto& v : sub.vertices) {
+                        XMFLOAT3 a = accum[keyOf(v.pos)];
+                        XMVECTOR sn = XMVector3Normalize(XMLoadFloat3(&a));
+                        XMFLOAT3 s; XMStoreFloat3(&s, sn);
+                        v.tangent = { s.x, s.y, s.z, 1.0f };
+                    }
                 }
 
                 // --- 인덱스 ---
