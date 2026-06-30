@@ -6,6 +6,7 @@
 #include "Scene/Scene03_TransformProjection.h"
 #include "Scene/Scene04_PhongAndNormalMap.h"
 #include "Scene/Scene05_StylizedShading.h"
+#include "Scene/Scene06_ProceduralNoise.h"
 #include <DirectXColors.h>
 #include <cassert>
 
@@ -29,6 +30,7 @@ bool DemoApp::Init()
         return false;
     if (!m_batch3d.Init(m_pd3dDevice.Get(), m_pd3dImmediateContext.Get()))
         return false;
+    m_fsquad.Init(m_pd3dDevice.Get());
 
     // 씬 등록 (인덱스 = 숫자키-1). 미구현 슬롯은 비워둔다.
     m_scenes[0] = std::make_unique<Scene01_MathFundamentals>();      // 1
@@ -36,6 +38,7 @@ bool DemoApp::Init()
     m_scenes[2] = std::make_unique<Scene03_TransformProjection>();   // 3
     m_scenes[3] = std::make_unique<Scene04_PhongAndNormalMap>();     // 4
     m_scenes[4] = std::make_unique<Scene05_StylizedShading>();       // 5
+    m_scenes[5] = std::make_unique<Scene06_ProceduralNoise>();       // 6
 
     SceneContext ctx = MakeContext();
     for (auto& s : m_scenes)
@@ -111,6 +114,7 @@ SceneContext DemoApp::MakeContext()
     ctx.batch3d = &m_batch3d;
     ctx.backRTV = m_pRenderTargetView.Get();
     ctx.backDSV = m_pDepthStencilView.Get();
+    ctx.fsquad = &m_fsquad;
     ctx.screenWidth = m_ClientWidth;
     ctx.screenHeight = m_ClientHeight;
     ctx.mouse = m_pMouse->GetState();

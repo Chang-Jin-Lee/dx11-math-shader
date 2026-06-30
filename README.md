@@ -6,7 +6,7 @@
 - **플랫폼**: Win32 Desktop, x64, Direct3D 11
 - **의존성**: **Windows SDK만 사용** (vcpkg/NuGet/외부 라이브러리 불필요) — clone 후 바로 빌드됩니다.
 
-> 작성 중인 프로젝트입니다. 현재 **Scene01~05** (게임수학 기초 · 보간/곡선 · 행렬/투영 · Phong/Normal Mapping · 스타일라이즈드 셰이딩) 가 구현되어 있고, **Scene06~08** 은 같은 씬 시스템 위에 순차적으로 추가됩니다. 전체 명세는 [`docs/dx11-math-shader-demo-guide.md`](docs/dx11-math-shader-demo-guide.md) 참고.
+> 작성 중인 프로젝트입니다. 현재 **Scene01~06** (게임수학 기초 · 보간/곡선 · 행렬/투영 · Phong/Normal Mapping · 스타일라이즈드 셰이딩 · 절차적 노이즈) 가 구현되어 있고, **Scene07~08** 은 같은 씬 시스템 위에 순차적으로 추가됩니다. 전체 명세는 [`docs/dx11-math-shader-demo-guide.md`](docs/dx11-math-shader-demo-guide.md) 참고.
 
 ---
 
@@ -182,6 +182,30 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 
 ---
 
+## Scene06 — 절차적 노이즈
+
+전체화면 픽셀 셰이더로 절차적 패턴을 생성합니다(메시·텍스처 없음).
+
+| 서브모드 | 내용 |
+|----------|------|
+| `Q` 의사난수 | `sin` 기반 해시 그리드 |
+| `W` Value vs Perlin | 좌우 분할 비교 (Value=격자형, Perlin=등방성) |
+| `E` FBM | Fractal Brownian Motion, `+`/`-` 로 옥타브(1~8) 조절 |
+| `R` Domain Warp / Ripple | 좌: 도메인 워핑(마블링), 우: 물결 파동 |
+| `T` Truchet | 셀별 무작위 호(arc) 타일 패턴 |
+
+<table>
+  <tr>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene06/scene06_random.png" alt="Random" /><br/><sub><b>Q</b> 의사난수</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene06/scene06_value_perlin.png" alt="Value/Perlin" /><br/><sub><b>W</b> Value/Perlin</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene06/scene06_fbm.png" alt="FBM" /><br/><sub><b>E</b> FBM</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene06/scene06_domainwarp.png" alt="Domain Warp" /><br/><sub><b>R</b> DomainWarp/Ripple</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene06/scene06_truchet.png" alt="Truchet" /><br/><sub><b>T</b> Truchet</sub></td>
+  </tr>
+</table>
+
+---
+
 ## 아키텍처
 
 ```
@@ -195,7 +219,8 @@ src/
 │   ├── Scene02_CurvesAndSplines.{h,cpp}    보간·Bezier·Hermite·Catmull-Rom
 │   ├── Scene03_TransformProjection.{h,cpp} 행렬·투영·LookAt
 │   ├── Scene04_PhongAndNormalMap.{h,cpp}   Phong/NormalMap (임베드 HLSL)
-│   └── Scene05_StylizedShading.{h,cpp}     Toon/Outline/Sobel/Hatching
+│   ├── Scene05_StylizedShading.{h,cpp}     Toon/Outline/Sobel/Hatching
+│   └── Scene06_ProceduralNoise.{h,cpp}     노이즈/FBM/DomainWarp/Truchet
 ├── Math/
 │   ├── Collision2D.h                AABB/OBB(SAT)/반사/다각형 내부판별
 │   └── Curves.h                     Bezier/Hermite/Catmull-Rom/이징

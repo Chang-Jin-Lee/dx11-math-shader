@@ -12,6 +12,7 @@
 
 class PrimitiveBatch2D;
 class PrimitiveBatch3D;
+class FullscreenPass;
 
 // 매 프레임 씬에 전달되는 입력/리소스 묶음
 struct SceneContext
@@ -22,6 +23,7 @@ struct SceneContext
     PrimitiveBatch3D*    batch3d = nullptr;   // 월드공간 3D 라인/도형 배처
     ID3D11RenderTargetView* backRTV = nullptr; // 백버퍼 RTV(오프스크린 후 복귀용)
     ID3D11DepthStencilView* backDSV = nullptr; // 백버퍼 DSV
+    FullscreenPass*      fsquad  = nullptr;   // 공유 전체화면 삼각형 패스
     int screenWidth  = 0;
     int screenHeight = 0;
 
