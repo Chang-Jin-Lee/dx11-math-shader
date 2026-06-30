@@ -2,6 +2,7 @@
 #include "d3dUtil.h"
 #include "DXTrace.h"
 #include "Scene/Scene01_MathFundamentals.h"
+#include "Scene/Scene03_TransformProjection.h"
 #include "Scene/Scene04_PhongAndNormalMap.h"
 #include <DirectXColors.h>
 #include <cassert>
@@ -24,9 +25,12 @@ bool DemoApp::Init()
 
     if (!m_batch.Init(m_pd3dDevice.Get(), m_pd3dImmediateContext.Get()))
         return false;
+    if (!m_batch3d.Init(m_pd3dDevice.Get(), m_pd3dImmediateContext.Get()))
+        return false;
 
     // 씬 등록 (인덱스 = 숫자키-1). 미구현 슬롯은 비워둔다.
     m_scenes[0] = std::make_unique<Scene01_MathFundamentals>();      // 1
+    m_scenes[2] = std::make_unique<Scene03_TransformProjection>();   // 3
     m_scenes[3] = std::make_unique<Scene04_PhongAndNormalMap>();     // 4
 
     SceneContext ctx = MakeContext();
@@ -100,6 +104,7 @@ SceneContext DemoApp::MakeContext()
     ctx.device = m_pd3dDevice.Get();
     ctx.context = m_pd3dImmediateContext.Get();
     ctx.batch = &m_batch;
+    ctx.batch3d = &m_batch3d;
     ctx.screenWidth = m_ClientWidth;
     ctx.screenHeight = m_ClientHeight;
     ctx.mouse = m_pMouse->GetState();
@@ -149,6 +154,9 @@ void DemoApp::DrawScene()
     m_pd3dImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(),
         D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
+    // 씬이 뷰포트를 바꿀 수 있으므로 매 프레임 전체 뷰포트로 초기화
+    m_pd3dImmediateContext->RSSetViewports(1, &m_ScreenViewport);
+
     // 씬 렌더
     if (m_scenes[m_currentScene])
     {
@@ -170,7 +178,7 @@ void DemoApp::DrawScene()
 
         std::wstring body = L"숫자키 1~8: 씬 전환   |   ESC: 종료\n" + scene->HudText();
         m_pd2dRenderTarget->DrawTextW(body.c_str(), (UINT32)body.size(), m_bodyFormat.Get(),
-            D2D1_RECT_F{ 14.0f, 46.0f, (float)m_ClientWidth - 10.0f, 140.0f }, m_textBrush.Get());
+            D2D1_RECT_F{ 14.0f, 46.0f, (float)m_ClientWidth - 10.0f, 280.0f }, m_textBrush.Get());
 
         HRESULT hr = m_pd2dRenderTarget->EndDraw();
         (void)hr;

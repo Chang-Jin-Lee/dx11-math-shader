@@ -9,6 +9,7 @@
 #pragma once
 #include "d3dApp.h"
 #include "PrimitiveBatch2D.h"
+#include "Render/PrimitiveBatch3D.h"
 #include "IScene.h"
 #include <memory>
 #include <array>
@@ -29,6 +30,7 @@ private:
     SceneContext MakeContext();
 
     PrimitiveBatch2D m_batch;
+    PrimitiveBatch3D m_batch3d;
     std::array<std::unique_ptr<IScene>, 8> m_scenes;   // 인덱스 i = 숫자키 (i+1)
     int  m_currentScene = 0;
     bool m_scenesInitialized = false;

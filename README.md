@@ -6,7 +6,7 @@
 - **플랫폼**: Win32 Desktop, x64, Direct3D 11
 - **의존성**: **Windows SDK만 사용** (vcpkg/NuGet/외부 라이브러리 불필요) — clone 후 바로 빌드됩니다.
 
-> 작성 중인 프로젝트입니다. 현재 **Scene01(게임수학 기초)** 과 **Scene04(Phong·Normal Mapping)** 가 구현되어 있고, 나머지 씬은 같은 씬 시스템 위에 순차적으로 추가됩니다. 전체 명세는 [`docs/dx11-math-shader-demo-guide.md`](docs/dx11-math-shader-demo-guide.md) 참고.
+> 작성 중인 프로젝트입니다. 현재 **Scene01(게임수학 기초)**, **Scene03(행렬·투영)**, **Scene04(Phong·Normal Mapping)** 가 구현되어 있고, 나머지 씬은 같은 씬 시스템 위에 순차적으로 추가됩니다. 전체 명세는 [`docs/dx11-math-shader-demo-guide.md`](docs/dx11-math-shader-demo-guide.md) 참고.
 
 ---
 
@@ -80,6 +80,28 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 
 ---
 
+## Scene03 — 행렬 변환과 투영
+
+3D 파이프라인의 좌표 변환을 직접 보여줍니다. 마우스 좌드래그로 카메라 공전.
+
+| 서브모드 | 내용 |
+|----------|------|
+| `Q` TRS 분해 | `world = S * R * T`. 방향키 이동 / `[` `]` 스케일 / 회전 자동, 결과 행렬을 실시간 텍스트로 표시 |
+| `W` 투영 비교 | 좌우 분할 — 왼쪽 **정사영**(크기 일정), 오른쪽 **원근**(멀수록 작아짐). `F`/`V` 로 FOV 조절 |
+| `E` LookAt 전개 | `XMMatrixLookAtLH` 대신 **외적으로 View 행렬을 직접 구성**. X·Y·Z 축 표시 |
+
+3D 라인·도형은 재사용 가능한 [`src/Render/PrimitiveBatch3D`](src/Render/PrimitiveBatch3D.h)(viewProj 기반, 깊이 테스트)로 그립니다.
+
+<table>
+  <tr>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene03/scene03_trs.png" alt="TRS" /><br/><sub><b>Q</b> · TRS 분해 (S·R·T + 행렬값)</sub></td>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene03/scene03_projection.png" alt="투영 비교" /><br/><sub><b>W</b> · 정사영 vs 원근</sub></td>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene03/scene03_lookat.png" alt="LookAt" /><br/><sub><b>E</b> · LookAt 직접 전개</sub></td>
+  </tr>
+</table>
+
+---
+
 ## Scene04 — Phong 조명 + Normal Mapping
 
 이후 3D 씬의 베이스가 되는 조명 셰이더. 구체와 바닥에 점광원(자동 공전)을 비추고, 서브모드로 **조명 항을 하나씩 누적**해 각 항의 효과를 분리해 보여줍니다. 마우스 좌드래그로 카메라 공전, 휠로 줌.
@@ -118,12 +140,14 @@ src/
 ├── PrimitiveBatch2D.{h,cpp}         2D 라인/도형 즉시모드 배처 (런타임 셰이더 컴파일)
 ├── Scene/
 │   ├── Scene01_MathFundamentals.{h,cpp}
+│   ├── Scene03_TransformProjection.{h,cpp} 행렬·투영·LookAt
 │   └── Scene04_PhongAndNormalMap.{h,cpp}   Phong/NormalMap (임베드 HLSL)
 ├── Math/
 │   └── Collision2D.h                AABB/OBB(SAT)/반사/다각형 내부판별
 ├── Render/
 │   ├── Geometry.h                   구/평면 메시 + 탄젠트
 │   ├── OrbitCamera.h                궤도 카메라
+│   ├── PrimitiveBatch3D.{h,cpp}     월드공간 3D 라인/도형 배처
 │   └── ProceduralTexture.h          벽돌 디퓨즈/노말맵 절차 생성
 └── (프레임워크) d3dApp, d3dUtil, DXTrace, CpuTimer, Keyboard, Mouse, WinMin
 ```

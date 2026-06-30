@@ -11,6 +11,7 @@
 #include "Keyboard.h"
 
 class PrimitiveBatch2D;
+class PrimitiveBatch3D;
 
 // 매 프레임 씬에 전달되는 입력/리소스 묶음
 struct SceneContext
@@ -18,6 +19,7 @@ struct SceneContext
     ID3D11Device*        device  = nullptr;
     ID3D11DeviceContext* context = nullptr;
     PrimitiveBatch2D*    batch   = nullptr;   // 2D 오버레이 배처
+    PrimitiveBatch3D*    batch3d = nullptr;   // 월드공간 3D 라인/도형 배처
     int screenWidth  = 0;
     int screenHeight = 0;
 
