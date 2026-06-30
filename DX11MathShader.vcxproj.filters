@@ -30,6 +30,9 @@
     <ClCompile Include="src\Scene\Scene01_MathFundamentals.cpp">
       <Filter>Demo\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="src\Scene\Scene02_CurvesAndSplines.cpp">
+      <Filter>Demo\Scene</Filter>
+    </ClCompile>
     <ClCompile Include="src\Scene\Scene03_TransformProjection.cpp">
       <Filter>Demo\Scene</Filter>
     </ClCompile>
@@ -77,7 +80,13 @@
     <ClInclude Include="src\Scene\Scene04_PhongAndNormalMap.h">
       <Filter>Demo\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="src\Scene\Scene02_CurvesAndSplines.h">
+      <Filter>Demo\Scene</Filter>
+    </ClInclude>
     <ClInclude Include="src\Math\Collision2D.h">
+      <Filter>Demo\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Math\Curves.h">
       <Filter>Demo\Math</Filter>
     </ClInclude>
     <ClInclude Include="src\Render\Geometry.h">

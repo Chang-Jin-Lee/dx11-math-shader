@@ -6,7 +6,7 @@
 - **플랫폼**: Win32 Desktop, x64, Direct3D 11
 - **의존성**: **Windows SDK만 사용** (vcpkg/NuGet/외부 라이브러리 불필요) — clone 후 바로 빌드됩니다.
 
-> 작성 중인 프로젝트입니다. 현재 **Scene01(게임수학 기초)**, **Scene03(행렬·투영)**, **Scene04(Phong·Normal Mapping)** 가 구현되어 있고, 나머지 씬은 같은 씬 시스템 위에 순차적으로 추가됩니다. 전체 명세는 [`docs/dx11-math-shader-demo-guide.md`](docs/dx11-math-shader-demo-guide.md) 참고.
+> 작성 중인 프로젝트입니다. 현재 **Scene01~04** (게임수학 기초 · 보간/곡선 · 행렬/투영 · Phong/Normal Mapping) 가 구현되어 있고, **Scene05~08** 은 같은 씬 시스템 위에 순차적으로 추가됩니다. 전체 명세는 [`docs/dx11-math-shader-demo-guide.md`](docs/dx11-math-shader-demo-guide.md) 참고.
 
 ---
 
@@ -80,6 +80,32 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 
 ---
 
+## Scene02 — 보간과 곡선
+
+게임에서 애니메이션·경로에 쓰이는 보간과 파라메트릭 곡선을 2D로 보여줍니다. 주황 제어점을 **마우스로 드래그**해 곡선을 바꿀 수 있습니다.
+
+| 서브모드 | 내용 |
+|----------|------|
+| `Q` 보간 비교 | Linear / Smoothstep / Sine / SineInOut 이징을 동시에 — 이동 + `t→값` 그래프 |
+| `W` Bezier | 3차 Bezier + 제어 다각형 + **de Casteljau** 구성 시각화 |
+| `E` Hermite | 끝점·접선 핸들로 곡선 방향 제어 |
+| `R` Catmull-Rom | 제어점을 모두 지나는 닫힌 스플라인 + **arc-length 등속** 이동 |
+
+곡선 수식은 [`src/Math/Curves.h`](src/Math/Curves.h)에 순수 함수로 있습니다.
+
+<table>
+  <tr>
+    <td align="center" width="50%"><img width="420" src="docs/images/scene02/scene02_interp.png" alt="보간 비교" /><br/><sub><b>Q</b> · 보간 비교 + 그래프</sub></td>
+    <td align="center" width="50%"><img width="420" src="docs/images/scene02/scene02_bezier.png" alt="Bezier" /><br/><sub><b>W</b> · 3차 Bezier (de Casteljau)</sub></td>
+  </tr>
+  <tr>
+    <td align="center" width="50%"><img width="420" src="docs/images/scene02/scene02_hermite.png" alt="Hermite" /><br/><sub><b>E</b> · Hermite (접선 핸들)</sub></td>
+    <td align="center" width="50%"><img width="420" src="docs/images/scene02/scene02_catmull.png" alt="Catmull-Rom" /><br/><sub><b>R</b> · Catmull-Rom 닫힌 스플라인</sub></td>
+  </tr>
+</table>
+
+---
+
 ## Scene03 — 행렬 변환과 투영
 
 3D 파이프라인의 좌표 변환을 직접 보여줍니다. 마우스 좌드래그로 카메라 공전.
@@ -140,10 +166,12 @@ src/
 ├── PrimitiveBatch2D.{h,cpp}         2D 라인/도형 즉시모드 배처 (런타임 셰이더 컴파일)
 ├── Scene/
 │   ├── Scene01_MathFundamentals.{h,cpp}
+│   ├── Scene02_CurvesAndSplines.{h,cpp}    보간·Bezier·Hermite·Catmull-Rom
 │   ├── Scene03_TransformProjection.{h,cpp} 행렬·투영·LookAt
 │   └── Scene04_PhongAndNormalMap.{h,cpp}   Phong/NormalMap (임베드 HLSL)
 ├── Math/
-│   └── Collision2D.h                AABB/OBB(SAT)/반사/다각형 내부판별
+│   ├── Collision2D.h                AABB/OBB(SAT)/반사/다각형 내부판별
+│   └── Curves.h                     Bezier/Hermite/Catmull-Rom/이징
 ├── Render/
 │   ├── Geometry.h                   구/평면 메시 + 탄젠트
 │   ├── OrbitCamera.h                궤도 카메라

@@ -2,6 +2,7 @@
 #include "d3dUtil.h"
 #include "DXTrace.h"
 #include "Scene/Scene01_MathFundamentals.h"
+#include "Scene/Scene02_CurvesAndSplines.h"
 #include "Scene/Scene03_TransformProjection.h"
 #include "Scene/Scene04_PhongAndNormalMap.h"
 #include <DirectXColors.h>
@@ -30,6 +31,7 @@ bool DemoApp::Init()
 
     // 씬 등록 (인덱스 = 숫자키-1). 미구현 슬롯은 비워둔다.
     m_scenes[0] = std::make_unique<Scene01_MathFundamentals>();      // 1
+    m_scenes[1] = std::make_unique<Scene02_CurvesAndSplines>();      // 2
     m_scenes[2] = std::make_unique<Scene03_TransformProjection>();   // 3
     m_scenes[3] = std::make_unique<Scene04_PhongAndNormalMap>();     // 4
 

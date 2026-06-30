@@ -77,6 +77,7 @@
     <ClCompile Include="src\DemoApp.cpp" />
     <ClCompile Include="src\PrimitiveBatch2D.cpp" />
     <ClCompile Include="src\Scene\Scene01_MathFundamentals.cpp" />
+    <ClCompile Include="src\Scene\Scene02_CurvesAndSplines.cpp" />
     <ClCompile Include="src\Scene\Scene03_TransformProjection.cpp" />
     <ClCompile Include="src\Scene\Scene04_PhongAndNormalMap.cpp" />
     <ClCompile Include="src\Render\PrimitiveBatch3D.cpp" />
@@ -92,9 +93,11 @@
     <ClInclude Include="src\IScene.h" />
     <ClInclude Include="src\PrimitiveBatch2D.h" />
     <ClInclude Include="src\Scene\Scene01_MathFundamentals.h" />
+    <ClInclude Include="src\Scene\Scene02_CurvesAndSplines.h" />
     <ClInclude Include="src\Scene\Scene03_TransformProjection.h" />
     <ClInclude Include="src\Scene\Scene04_PhongAndNormalMap.h" />
     <ClInclude Include="src\Math\Collision2D.h" />
+    <ClInclude Include="src\Math\Curves.h" />
     <ClInclude Include="src\Render\Geometry.h" />
     <ClInclude Include="src\Render\PrimitiveBatch3D.h" />
     <ClInclude Include="src\Render\OrbitCamera.h" />
