@@ -6,7 +6,7 @@
 - **플랫폼**: Win32 Desktop, x64, Direct3D 11
 - **의존성**: **Windows SDK만 사용** (vcpkg/NuGet/외부 라이브러리 불필요) — clone 후 바로 빌드됩니다.
 
-> 작성 중인 프로젝트입니다. 현재 **Scene01(게임수학 기초)** 이 구현되어 있고, Scene02~08은 같은 씬 시스템 위에 순차적으로 추가됩니다. 전체 명세는 [`docs/dx11-math-shader-demo-guide.md`](docs/dx11-math-shader-demo-guide.md) 참고.
+> 작성 중인 프로젝트입니다. 현재 **Scene01(게임수학 기초)** 과 **Scene04(Phong·Normal Mapping)** 가 구현되어 있고, 나머지 씬은 같은 씬 시스템 위에 순차적으로 추가됩니다. 전체 명세는 [`docs/dx11-math-shader-demo-guide.md`](docs/dx11-math-shader-demo-guide.md) 참고.
 
 ---
 
@@ -80,6 +80,34 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 
 ---
 
+## Scene04 — Phong 조명 + Normal Mapping
+
+이후 3D 씬의 베이스가 되는 조명 셰이더. 구체와 바닥에 점광원(자동 공전)을 비추고, 서브모드로 **조명 항을 하나씩 누적**해 각 항의 효과를 분리해 보여줍니다. 마우스 좌드래그로 카메라 공전, 휠로 줌.
+
+| 서브모드 | 내용 |
+|----------|------|
+| `Q` Diffuse | 람베르트 난반사만 |
+| `W` +Specular | 정반사 하이라이트 추가 (Phong) |
+| `E` +Ambient | 주변광 추가 |
+| `R` 전체 Phong | + Emissive |
+| `T` Normal Mapping | 절차적 벽돌 디퓨즈/노말맵으로 표면 요철 표현 |
+
+법선·탄젠트 계산과 TBN 변환은 [`src/Scene/Scene04_PhongAndNormalMap.cpp`](src/Scene/Scene04_PhongAndNormalMap.cpp)의 임베드 HLSL에, 메시/카메라/절차 텍스처는 [`src/Render/`](src/Render)에 있습니다. 벽돌 텍스처는 **코드로 생성**되어 외부 애셋이 필요 없습니다.
+
+<table>
+  <tr>
+    <td align="center"><img width="230" src="docs/images/scene04/scene04_diffuse.png" alt="Diffuse" /><br/><sub><b>Q</b> · Diffuse</sub></td>
+    <td align="center"><img width="230" src="docs/images/scene04/scene04_specular.png" alt="Specular" /><br/><sub><b>W</b> · +Specular</sub></td>
+    <td align="center"><img width="230" src="docs/images/scene04/scene04_ambient.png" alt="Ambient" /><br/><sub><b>E</b> · +Ambient</sub></td>
+    <td align="center"><img width="230" src="docs/images/scene04/scene04_phong.png" alt="Phong" /><br/><sub><b>R</b> · 전체 Phong</sub></td>
+  </tr>
+  <tr>
+    <td colspan="4" align="center"><img width="560" src="docs/images/scene04/scene04_normalmap.png" alt="Normal Mapping" /><br/><sub><b>T</b> · Normal Mapping — 절차적 벽돌 디퓨즈/노말맵</sub></td>
+  </tr>
+</table>
+
+---
+
 ## 아키텍처
 
 ```
@@ -89,9 +117,14 @@ src/
 ├── IScene.h                         씬 공통 인터페이스 + SceneContext(입력/리소스 전달)
 ├── PrimitiveBatch2D.{h,cpp}         2D 라인/도형 즉시모드 배처 (런타임 셰이더 컴파일)
 ├── Scene/
-│   └── Scene01_MathFundamentals.{h,cpp}
+│   ├── Scene01_MathFundamentals.{h,cpp}
+│   └── Scene04_PhongAndNormalMap.{h,cpp}   Phong/NormalMap (임베드 HLSL)
 ├── Math/
 │   └── Collision2D.h                AABB/OBB(SAT)/반사/다각형 내부판별
+├── Render/
+│   ├── Geometry.h                   구/평면 메시 + 탄젠트
+│   ├── OrbitCamera.h                궤도 카메라
+│   └── ProceduralTexture.h          벽돌 디퓨즈/노말맵 절차 생성
 └── (프레임워크) d3dApp, d3dUtil, DXTrace, CpuTimer, Keyboard, Mouse, WinMin
 ```
 

@@ -2,6 +2,7 @@
 #include "d3dUtil.h"
 #include "DXTrace.h"
 #include "Scene/Scene01_MathFundamentals.h"
+#include "Scene/Scene04_PhongAndNormalMap.h"
 #include <DirectXColors.h>
 #include <cassert>
 
@@ -24,13 +25,13 @@ bool DemoApp::Init()
     if (!m_batch.Init(m_pd3dDevice.Get(), m_pd3dImmediateContext.Get()))
         return false;
 
-    // 씬 등록 (현재 Scene01만 구현. 이후 Scene02~08을 같은 방식으로 추가)
-    m_scenes.clear();
-    m_scenes.emplace_back(std::make_unique<Scene01_MathFundamentals>());
+    // 씬 등록 (인덱스 = 숫자키-1). 미구현 슬롯은 비워둔다.
+    m_scenes[0] = std::make_unique<Scene01_MathFundamentals>();      // 1
+    m_scenes[3] = std::make_unique<Scene04_PhongAndNormalMap>();     // 4
 
     SceneContext ctx = MakeContext();
     for (auto& s : m_scenes)
-        s->Init(ctx);
+        if (s) s->Init(ctx);
     m_scenesInitialized = true;
 
     // 마우스를 절대 좌표 모드로 (오버레이 좌표와 일치)
@@ -129,11 +130,11 @@ void DemoApp::UpdateScene(float dt)
         Keyboard::D5, Keyboard::D6, Keyboard::D7, Keyboard::D8 };
     for (int i = 0; i < 8; ++i)
     {
-        if (m_KeyboardTracker.IsKeyPressed(numKeys[i]) && i < static_cast<int>(m_scenes.size()))
+        if (m_KeyboardTracker.IsKeyPressed(numKeys[i]) && m_scenes[i])
             m_currentScene = i;
     }
 
-    if (m_scenes.empty()) return;
+    if (!m_scenes[m_currentScene]) return;
     SceneContext ctx = MakeContext();
     m_scenes[m_currentScene]->Update(ctx, dt);
 }
@@ -148,8 +149,8 @@ void DemoApp::DrawScene()
     m_pd3dImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(),
         D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    // 2D 오버레이 렌더
-    if (!m_scenes.empty())
+    // 씬 렌더
+    if (m_scenes[m_currentScene])
     {
         SceneContext ctx = MakeContext();
         m_batch.Begin(m_ClientWidth, m_ClientHeight);
@@ -158,7 +159,7 @@ void DemoApp::DrawScene()
     }
 
     // Direct2D 텍스트
-    if (m_pd2dRenderTarget && !m_scenes.empty())
+    if (m_pd2dRenderTarget && m_scenes[m_currentScene])
     {
         IScene* scene = m_scenes[m_currentScene].get();
         m_pd2dRenderTarget->BeginDraw();

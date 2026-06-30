@@ -11,7 +11,7 @@
 #include "PrimitiveBatch2D.h"
 #include "IScene.h"
 #include <memory>
-#include <vector>
+#include <array>
 
 class DemoApp : public D3DApp
 {
@@ -29,7 +29,7 @@ private:
     SceneContext MakeContext();
 
     PrimitiveBatch2D m_batch;
-    std::vector<std::unique_ptr<IScene>> m_scenes;
+    std::array<std::unique_ptr<IScene>, 8> m_scenes;   // 인덱스 i = 숫자키 (i+1)
     int  m_currentScene = 0;
     bool m_scenesInitialized = false;
 

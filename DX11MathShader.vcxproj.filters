@@ -13,6 +13,9 @@
     <Filter Include="Demo\Math">
       <UniqueIdentifier>{a1000000-0000-0000-0000-000000000004}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Demo\Render">
+      <UniqueIdentifier>{a1000000-0000-0000-0000-000000000005}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Main.cpp">
@@ -25,6 +28,9 @@
       <Filter>Demo</Filter>
     </ClCompile>
     <ClCompile Include="src\Scene\Scene01_MathFundamentals.cpp">
+      <Filter>Demo\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Scene\Scene04_PhongAndNormalMap.cpp">
       <Filter>Demo\Scene</Filter>
     </ClCompile>
     <ClCompile Include="src\d3dApp.cpp">
@@ -59,8 +65,20 @@
     <ClInclude Include="src\Scene\Scene01_MathFundamentals.h">
       <Filter>Demo\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="src\Scene\Scene04_PhongAndNormalMap.h">
+      <Filter>Demo\Scene</Filter>
+    </ClInclude>
     <ClInclude Include="src\Math\Collision2D.h">
       <Filter>Demo\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Render\Geometry.h">
+      <Filter>Demo\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Render\OrbitCamera.h">
+      <Filter>Demo\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Render\ProceduralTexture.h">
+      <Filter>Demo\Render</Filter>
     </ClInclude>
     <ClInclude Include="src\d3dApp.h">
       <Filter>Framework</Filter>
