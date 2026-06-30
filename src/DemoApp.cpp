@@ -5,6 +5,7 @@
 #include "Scene/Scene02_CurvesAndSplines.h"
 #include "Scene/Scene03_TransformProjection.h"
 #include "Scene/Scene04_PhongAndNormalMap.h"
+#include "Scene/Scene05_StylizedShading.h"
 #include <DirectXColors.h>
 #include <cassert>
 
@@ -34,6 +35,7 @@ bool DemoApp::Init()
     m_scenes[1] = std::make_unique<Scene02_CurvesAndSplines>();      // 2
     m_scenes[2] = std::make_unique<Scene03_TransformProjection>();   // 3
     m_scenes[3] = std::make_unique<Scene04_PhongAndNormalMap>();     // 4
+    m_scenes[4] = std::make_unique<Scene05_StylizedShading>();       // 5
 
     SceneContext ctx = MakeContext();
     for (auto& s : m_scenes)
@@ -107,6 +109,8 @@ SceneContext DemoApp::MakeContext()
     ctx.context = m_pd3dImmediateContext.Get();
     ctx.batch = &m_batch;
     ctx.batch3d = &m_batch3d;
+    ctx.backRTV = m_pRenderTargetView.Get();
+    ctx.backDSV = m_pDepthStencilView.Get();
     ctx.screenWidth = m_ClientWidth;
     ctx.screenHeight = m_ClientHeight;
     ctx.mouse = m_pMouse->GetState();

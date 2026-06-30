@@ -1,0 +1,338 @@
+#include "Scene05_StylizedShading.h"
+#include "../Render/ModelLoader.h"
+#include "../d3dUtil.h"
+#include "../DXTrace.h"
+#include <d3dcompiler.h>
+#include <Windows.h>
+#include <string>
+#include <cmath>
+
+#pragma comment(lib, "d3dcompiler.lib")
+using namespace DirectX;
+
+namespace
+{
+    const char g_Shader[] = R"(
+cbuffer CBFrame  : register(b0){ row_major float4x4 gViewProj; float3 gCamPos; float gTime; };
+cbuffer CBObject : register(b1){ row_major float4x4 gWorld; row_major float4x4 gWorldIT; };
+cbuffer CBMat    : register(b2){ float3 gLightDir; float gOutline; float4 gBase; float2 gTexel; float2 gPad; };
+
+struct VIn  { float3 pos:POSITION; float3 nor:NORMAL; float2 uv:TEXCOORD; float4 tan:TANGENT; };
+struct VOut { float4 svpos:SV_Position; float3 wnor:TEXCOORD0; float3 wpos:TEXCOORD1; float2 uv:TEXCOORD2; };
+
+VOut VSMain(VIn v){
+    VOut o; float4 wp = mul(float4(v.pos,1), gWorld);
+    o.wpos = wp.xyz; o.svpos = mul(wp, gViewProj);
+    o.wnor = mul(v.nor, (float3x3)gWorldIT); o.uv = v.uv; return o;
+}
+VOut VSOutline(VIn v){
+    VOut o; float3 wn = normalize(mul(v.nor, (float3x3)gWorld));
+    float4 wp = mul(float4(v.pos,1), gWorld); wp.xyz += wn * gOutline;
+    o.wpos = wp.xyz; o.svpos = mul(wp, gViewProj);
+    o.wnor = normalize(mul(v.nor,(float3x3)gWorldIT)); o.uv = v.uv; return o;
+}
+
+float Lum(float3 c){ return dot(c, float3(0.299,0.587,0.114)); }
+
+float4 PSToon(VOut i):SV_Target{
+    float3 N=normalize(i.wnor); float3 L=normalize(-gLightDir);
+    float ndl=max(dot(N,L),0);
+    float band = ndl>0.66 ? 1.0 : (ndl>0.33 ? 0.62 : 0.32);
+    float3 col = gBase.rgb*band;
+    float3 V=normalize(gCamPos-i.wpos);
+    col += pow(1-saturate(dot(N,V)),3)*0.25;     // 림
+    return float4(col,1);
+}
+float4 PSFlat(VOut i):SV_Target{
+    float3 N=normalize(i.wnor); float3 L=normalize(-gLightDir);
+    float d=max(dot(N,L),0)*0.85+0.15;
+    return float4(gBase.rgb*d,1);
+}
+float4 PSOutline(VOut i):SV_Target{ return float4(0.02,0.02,0.03,1); }
+
+float4 PSHatch(VOut i):SV_Target{
+    float3 N=normalize(i.wnor); float3 L=normalize(-gLightDir);
+    float lum=max(dot(N,L),0);
+    float2 sp=i.svpos.xy; float h=1.0;
+    float s1=step(0.5,frac((sp.x+sp.y)/11.0));
+    float s2=step(0.5,frac((sp.x-sp.y)/11.0));
+    float s3=step(0.5,frac((sp.x+sp.y)/5.5));
+    if(lum<0.78) h=min(h,s1);
+    if(lum<0.52) h=min(h,s2);
+    if(lum<0.26) h=min(h,s3);
+    float3 col=lerp(float3(0.09,0.09,0.11), float3(0.95,0.95,0.90), h);
+    return float4(col,1);
+}
+
+Texture2D gScene:register(t0); SamplerState gSamp:register(s0);
+struct FQ{ float4 pos:SV_Position; float2 uv:TEXCOORD0; };
+float4 PSSobel(FQ i):SV_Target{
+    float2 ts=gTexel;
+    float tl=Lum(gScene.Sample(gSamp,i.uv+ts*float2(-1,-1)).rgb);
+    float  l=Lum(gScene.Sample(gSamp,i.uv+ts*float2(-1, 0)).rgb);
+    float bl=Lum(gScene.Sample(gSamp,i.uv+ts*float2(-1, 1)).rgb);
+    float  t=Lum(gScene.Sample(gSamp,i.uv+ts*float2( 0,-1)).rgb);
+    float  b=Lum(gScene.Sample(gSamp,i.uv+ts*float2( 0, 1)).rgb);
+    float tr=Lum(gScene.Sample(gSamp,i.uv+ts*float2( 1,-1)).rgb);
+    float  r=Lum(gScene.Sample(gSamp,i.uv+ts*float2( 1, 0)).rgb);
+    float br=Lum(gScene.Sample(gSamp,i.uv+ts*float2( 1, 1)).rgb);
+    float gx=-tl-2*l-bl+tr+2*r+br;
+    float gy= tl+2*t+tr-bl-2*b-br;
+    float e=saturate(sqrt(gx*gx+gy*gy)*1.6);
+    return float4(lerp(float3(0.97,0.97,0.95), float3(0.04,0.04,0.06), e),1);
+}
+)";
+
+    struct CBFrame { XMMATRIX viewProj; XMFLOAT3 camPos; float time; };
+    struct CBObject { XMMATRIX world; XMMATRIX worldIT; };
+    struct CBMat { XMFLOAT3 lightDir; float outline; XMFLOAT4 base; XMFLOAT2 texel; XMFLOAT2 pad; };
+
+    std::string ExeRelative(const char* rel)
+    {
+        char buf[MAX_PATH]; GetModuleFileNameA(nullptr, buf, MAX_PATH);
+        std::string p(buf); auto pos = p.find_last_of("\\/");
+        if (pos != std::string::npos) p = p.substr(0, pos + 1);
+        return p + rel;
+    }
+
+    ID3D11PixelShader* MakePS(ID3D11Device* d, const char* entry)
+    {
+        UINT flags = 0;
+#if defined(DEBUG) || defined(_DEBUG)
+        flags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+        Microsoft::WRL::ComPtr<ID3DBlob> b, e;
+        if (FAILED(D3DCompile(g_Shader, sizeof(g_Shader), "S5", nullptr, nullptr, entry, "ps_5_0", flags, 0, b.GetAddressOf(), e.GetAddressOf())))
+        { if (e) OutputDebugStringA((char*)e->GetBufferPointer()); return nullptr; }
+        ID3D11PixelShader* ps = nullptr;
+        d->CreatePixelShader(b->GetBufferPointer(), b->GetBufferSize(), nullptr, &ps);
+        return ps;
+    }
+    ID3D11Buffer* DynCB(ID3D11Device* d, UINT bytes)
+    {
+        D3D11_BUFFER_DESC bd = {}; bd.Usage = D3D11_USAGE_DYNAMIC; bd.ByteWidth = bytes;
+        bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER; bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+        ID3D11Buffer* b = nullptr; d->CreateBuffer(&bd, nullptr, &b); return b;
+    }
+}
+
+void Scene05_StylizedShading::Init(const SceneContext& ctx)
+{
+    if (m_inited) return;
+    ID3D11Device* d = ctx.device;
+    UINT flags = 0;
+#if defined(DEBUG) || defined(_DEBUG)
+    flags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+    // VS
+    ComPtr<ID3DBlob> vsb, vso, err;
+    D3DCompile(g_Shader, sizeof(g_Shader), "S5", nullptr, nullptr, "VSMain", "vs_5_0", flags, 0, vsb.GetAddressOf(), err.GetAddressOf());
+    if (!vsb) { if (err) OutputDebugStringA((char*)err->GetBufferPointer()); return; }
+    err.Reset();
+    D3DCompile(g_Shader, sizeof(g_Shader), "S5", nullptr, nullptr, "VSOutline", "vs_5_0", flags, 0, vso.GetAddressOf(), err.GetAddressOf());
+    d->CreateVertexShader(vsb->GetBufferPointer(), vsb->GetBufferSize(), nullptr, m_vsMain.GetAddressOf());
+    d->CreateVertexShader(vso->GetBufferPointer(), vso->GetBufferSize(), nullptr, m_vsOutline.GetAddressOf());
+
+    D3D11_INPUT_ELEMENT_DESC layout[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TANGENT",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    };
+    d->CreateInputLayout(layout, ARRAYSIZE(layout), vsb->GetBufferPointer(), vsb->GetBufferSize(), m_layout.GetAddressOf());
+
+    m_psToon.Attach(MakePS(d, "PSToon"));
+    m_psOutline.Attach(MakePS(d, "PSOutline"));
+    m_psFlat.Attach(MakePS(d, "PSFlat"));
+    m_psHatch.Attach(MakePS(d, "PSHatch"));
+    m_psSobel.Attach(MakePS(d, "PSSobel"));
+
+    m_cbFrame.Attach(DynCB(d, sizeof(CBFrame)));
+    m_cbObject.Attach(DynCB(d, sizeof(CBObject)));
+    m_cbMat.Attach(DynCB(d, sizeof(CBMat)));
+
+    // 래스터/깊이/샘플러
+    D3D11_RASTERIZER_DESC rd = {}; rd.FillMode = D3D11_FILL_SOLID; rd.DepthClipEnable = TRUE; rd.MultisampleEnable = TRUE;
+    rd.CullMode = D3D11_CULL_BACK;  d->CreateRasterizerState(&rd, m_rsBack.GetAddressOf());
+    rd.CullMode = D3D11_CULL_FRONT; d->CreateRasterizerState(&rd, m_rsFront.GetAddressOf());
+    rd.CullMode = D3D11_CULL_NONE;  d->CreateRasterizerState(&rd, m_rsNone.GetAddressOf());
+
+    D3D11_DEPTH_STENCIL_DESC dd = {}; dd.DepthEnable = TRUE; dd.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL; dd.DepthFunc = D3D11_COMPARISON_LESS;
+    d->CreateDepthStencilState(&dd, m_depthOn.GetAddressOf());
+    dd.DepthEnable = FALSE; dd.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    d->CreateDepthStencilState(&dd, m_depthOff.GetAddressOf());
+
+    D3D11_SAMPLER_DESC sd = {}; sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    sd.AddressU = sd.AddressV = sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP; sd.MaxLOD = D3D11_FLOAT32_MAX;
+    d->CreateSamplerState(&sd, m_samp.GetAddressOf());
+
+    m_fs.Init(d);
+
+    // 모델 로드
+    MeshData mesh; XMFLOAT3 mn, mx;
+    std::string path = ExeRelative("assets\\character.glb");
+    if (model::LoadGLB(path.c_str(), mesh, mn, mx) && !mesh.vertices.empty())
+    {
+        D3D11_BUFFER_DESC vbd = {}; vbd.Usage = D3D11_USAGE_IMMUTABLE;
+        vbd.ByteWidth = (UINT)(mesh.vertices.size() * sizeof(VertexPNUT)); vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        D3D11_SUBRESOURCE_DATA vsd = {}; vsd.pSysMem = mesh.vertices.data();
+        d->CreateBuffer(&vbd, &vsd, m_vb.GetAddressOf());
+
+        D3D11_BUFFER_DESC ibd = {}; ibd.Usage = D3D11_USAGE_IMMUTABLE;
+        ibd.ByteWidth = (UINT)(mesh.indices.size() * sizeof(unsigned int)); ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+        D3D11_SUBRESOURCE_DATA isd = {}; isd.pSysMem = mesh.indices.data();
+        d->CreateBuffer(&ibd, &isd, m_ib.GetAddressOf());
+        m_indexCount = (UINT)mesh.indices.size();
+
+        // 모델 맞추기: 중심을 원점으로, 높이 2.4로 스케일, 발을 y=0에
+        XMFLOAT3 c = { (mn.x + mx.x) * 0.5f, (mn.y + mx.y) * 0.5f, (mn.z + mx.z) * 0.5f };
+        float height = (mx.y - mn.y); if (height < 1e-3f) height = 1.0f;
+        float s = 2.4f / height;
+        m_world = XMMatrixTranslation(-c.x, -c.y, -c.z) * XMMatrixScaling(s, s, s) * XMMatrixTranslation(0, (mx.y - mn.y) * 0.5f * s, 0);
+        m_cam.target = { 0.0f, 1.2f, 0.0f };
+        m_cam.radius = 4.0f;
+        m_cam.elevation = 0.12f;
+        m_cam.azimuth = 2.0f;   // 캐릭터 정면 3/4 뷰
+        m_modelOK = true;
+    }
+
+    m_inited = true;
+}
+
+void Scene05_StylizedShading::Update(const SceneContext& ctx, float dt)
+{
+    m_time += dt;
+    auto* kt = ctx.keyboardTracker;
+    if (kt)
+    {
+        if (kt->IsKeyPressed(Keyboard::Q)) m_mode = 0;
+        else if (kt->IsKeyPressed(Keyboard::W)) m_mode = 1;
+        else if (kt->IsKeyPressed(Keyboard::E)) m_mode = 2;
+        else if (kt->IsKeyPressed(Keyboard::R)) m_mode = 3;
+        else if (kt->IsKeyPressed(Keyboard::T)) m_mode = 4;
+    }
+    int mx = ctx.mouse.x, my = ctx.mouse.y;
+    if (ctx.mouse.leftButton)
+    {
+        if (m_dragging) m_cam.Rotate((mx - m_prevMouseX) * 0.01f, (my - m_prevMouseY) * 0.01f);
+        m_dragging = true;
+    }
+    else m_dragging = false;
+    m_prevMouseX = mx; m_prevMouseY = my;
+    m_cam.Zoom((ctx.mouse.scrollWheelValue - m_prevWheel) / 120.0f * 0.6f);
+    m_prevWheel = ctx.mouse.scrollWheelValue;
+}
+
+void Scene05_StylizedShading::UpdateFrameCB(const SceneContext& ctx)
+{
+    ID3D11DeviceContext* c = ctx.context;
+    float aspect = (float)ctx.screenWidth / ctx.screenHeight;
+    XMFLOAT3 eye = m_cam.Eye();
+    D3D11_MAPPED_SUBRESOURCE m;
+    if (SUCCEEDED(c->Map(m_cbFrame.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &m)))
+    {
+        CBFrame* f = (CBFrame*)m.pData;
+        f->viewProj = m_cam.View() * m_cam.Proj(aspect);
+        f->camPos = eye; f->time = m_time;
+        c->Unmap(m_cbFrame.Get(), 0);
+    }
+    if (SUCCEEDED(c->Map(m_cbObject.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &m)))
+    {
+        CBObject* o = (CBObject*)m.pData;
+        o->world = m_world; o->worldIT = InverseTranspose(m_world);
+        c->Unmap(m_cbObject.Get(), 0);
+    }
+}
+
+void Scene05_StylizedShading::DrawModel(ID3D11DeviceContext* c, ID3D11VertexShader* vs, ID3D11PixelShader* ps, ID3D11RasterizerState* rs)
+{
+    UINT stride = sizeof(VertexPNUT), offset = 0;
+    c->IASetInputLayout(m_layout.Get());
+    c->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    c->IASetVertexBuffers(0, 1, m_vb.GetAddressOf(), &stride, &offset);
+    c->IASetIndexBuffer(m_ib.Get(), DXGI_FORMAT_R32_UINT, 0);
+    c->VSSetShader(vs, nullptr, 0);
+    c->PSSetShader(ps, nullptr, 0);
+    c->VSSetConstantBuffers(0, 1, m_cbFrame.GetAddressOf());
+    c->VSSetConstantBuffers(1, 1, m_cbObject.GetAddressOf());
+    c->VSSetConstantBuffers(2, 1, m_cbMat.GetAddressOf());
+    c->PSSetConstantBuffers(0, 1, m_cbFrame.GetAddressOf());
+    c->PSSetConstantBuffers(2, 1, m_cbMat.GetAddressOf());
+    c->RSSetState(rs);
+    c->DrawIndexed(m_indexCount, 0, 0);
+}
+
+void Scene05_StylizedShading::Render(const SceneContext& ctx)
+{
+    if (!m_inited || !m_modelOK) return;
+    ID3D11DeviceContext* c = ctx.context;
+    UpdateFrameCB(ctx);
+
+    // CBMat
+    D3D11_MAPPED_SUBRESOURCE m;
+    if (SUCCEEDED(c->Map(m_cbMat.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &m)))
+    {
+        CBMat* mat = (CBMat*)m.pData;
+        XMVECTOR ld = XMVector3Normalize(XMVectorSet(-0.3f, -0.6f, -0.55f, 0));
+        XMStoreFloat3(&mat->lightDir, ld);
+        mat->outline = 0.02f;
+        mat->base = { 0.62f, 0.66f, 0.78f, 1.0f };
+        mat->texel = { 1.0f / ctx.screenWidth, 1.0f / ctx.screenHeight };
+        mat->pad = { 0,0 };
+        c->Unmap(m_cbMat.Get(), 0);
+    }
+
+    c->OMSetDepthStencilState(m_depthOn.Get(), 0);
+    c->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
+
+    if (m_mode == 0)         // Toon
+        DrawModel(c, m_vsMain.Get(), m_psToon.Get(), m_rsBack.Get());
+    else if (m_mode == 1)    // Outline + Flat
+    {
+        DrawModel(c, m_vsOutline.Get(), m_psOutline.Get(), m_rsFront.Get());
+        DrawModel(c, m_vsMain.Get(), m_psFlat.Get(), m_rsBack.Get());
+    }
+    else if (m_mode == 2)    // Toon + Outline
+    {
+        DrawModel(c, m_vsOutline.Get(), m_psOutline.Get(), m_rsFront.Get());
+        DrawModel(c, m_vsMain.Get(), m_psToon.Get(), m_rsBack.Get());
+    }
+    else if (m_mode == 4)    // Hatching
+        DrawModel(c, m_vsMain.Get(), m_psHatch.Get(), m_rsBack.Get());
+    else if (m_mode == 3)    // Sobel (오프스크린 → 풀스크린)
+    {
+        if (m_rt.EnsureSize(ctx.device, ctx.screenWidth, ctx.screenHeight))
+        {
+            float clear[4] = { 0.55f, 0.57f, 0.62f, 1.0f };
+            m_rt.Begin(c, clear);
+            DrawModel(c, m_vsMain.Get(), m_psFlat.Get(), m_rsBack.Get());
+
+            // 백버퍼로 복귀
+            c->OMSetRenderTargets(1, &ctx.backRTV, ctx.backDSV);
+            D3D11_VIEWPORT vp{}; vp.Width = (float)ctx.screenWidth; vp.Height = (float)ctx.screenHeight; vp.MaxDepth = 1.0f;
+            c->RSSetViewports(1, &vp);
+
+            c->OMSetDepthStencilState(m_depthOff.Get(), 0);
+            c->RSSetState(m_rsNone.Get());
+            c->PSSetShader(m_psSobel.Get(), nullptr, 0);
+            c->PSSetConstantBuffers(2, 1, m_cbMat.GetAddressOf());
+            ID3D11ShaderResourceView* srv = m_rt.SRV();
+            c->PSSetShaderResources(0, 1, &srv);
+            c->PSSetSamplers(0, 1, m_samp.GetAddressOf());
+            m_fs.Draw(c);
+            ID3D11ShaderResourceView* nullSRV = nullptr;
+            c->PSSetShaderResources(0, 1, &nullSRV);
+        }
+    }
+}
+
+std::wstring Scene05_StylizedShading::HudText() const
+{
+    if (!m_modelOK)
+        return L"[오류] assets/character.glb 를 찾을 수 없습니다. (exe 옆 assets 폴더 확인)";
+    std::wstring s = L"서브모드:  Q=Toon  W=Outline  E=Toon+Outline  R=Sobel  T=Hatching   |   드래그:공전 휠:줌\n";
+    const wchar_t* n[] = { L"Toon(셀 셰이딩)", L"Outline(뒷면 확장)", L"Toon+Outline", L"Sobel 엣지(스케치)", L"Hatching(사선)" };
+    s += L"[현재: "; s += n[m_mode]; s += L"]  대상: VRoid 캐릭터(.glb, 형상만 — 텍스처 미사용)";
+    return s;
+}

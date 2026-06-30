@@ -80,7 +80,9 @@
     <ClCompile Include="src\Scene\Scene02_CurvesAndSplines.cpp" />
     <ClCompile Include="src\Scene\Scene03_TransformProjection.cpp" />
     <ClCompile Include="src\Scene\Scene04_PhongAndNormalMap.cpp" />
+    <ClCompile Include="src\Scene\Scene05_StylizedShading.cpp" />
     <ClCompile Include="src\Render\PrimitiveBatch3D.cpp" />
+    <ClCompile Include="src\Render\ModelLoader.cpp" />
     <ClCompile Include="src\d3dApp.cpp" />
     <ClCompile Include="src\d3dUtil.cpp" />
     <ClCompile Include="src\DXTrace.cpp" />
@@ -102,6 +104,11 @@
     <ClInclude Include="src\Render\PrimitiveBatch3D.h" />
     <ClInclude Include="src\Render\OrbitCamera.h" />
     <ClInclude Include="src\Render\ProceduralTexture.h" />
+    <ClInclude Include="src\Scene\Scene05_StylizedShading.h" />
+    <ClInclude Include="src\Render\RenderTexture.h" />
+    <ClInclude Include="src\Render\FullscreenPass.h" />
+    <ClInclude Include="src\Render\ModelLoader.h" />
+    <ClInclude Include="src\Render\cgltf.h" />
     <ClInclude Include="src\d3dApp.h" />
     <ClInclude Include="src\d3dUtil.h" />
     <ClInclude Include="src\DXTrace.h" />
@@ -111,4 +118,11 @@
     <ClInclude Include="src\WinMin.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <!-- 빌드 후 assets 폴더를 실행 파일 옆으로 복사 (런타임 로드용) -->
+  <Target Name="CopyAssets" AfterTargets="Build">
+    <ItemGroup>
+      <AssetFiles Include="$(SolutionDir)assets\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(AssetFiles)" DestinationFolder="$(OutDir)assets\%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

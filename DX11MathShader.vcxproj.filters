@@ -42,6 +42,12 @@
     <ClCompile Include="src\Render\PrimitiveBatch3D.cpp">
       <Filter>Demo\Render</Filter>
     </ClCompile>
+    <ClCompile Include="src\Render\ModelLoader.cpp">
+      <Filter>Demo\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Scene\Scene05_StylizedShading.cpp">
+      <Filter>Demo\Scene</Filter>
+    </ClCompile>
     <ClCompile Include="src\d3dApp.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
@@ -94,6 +100,21 @@
     </ClInclude>
     <ClInclude Include="src\Render\PrimitiveBatch3D.h">
       <Filter>Demo\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Render\RenderTexture.h">
+      <Filter>Demo\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Render\FullscreenPass.h">
+      <Filter>Demo\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Render\ModelLoader.h">
+      <Filter>Demo\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Render\cgltf.h">
+      <Filter>Demo\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Scene\Scene05_StylizedShading.h">
+      <Filter>Demo\Scene</Filter>
     </ClInclude>
     <ClInclude Include="src\Render\OrbitCamera.h">
       <Filter>Demo\Render</Filter>

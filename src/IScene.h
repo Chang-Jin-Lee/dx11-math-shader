@@ -20,6 +20,8 @@ struct SceneContext
     ID3D11DeviceContext* context = nullptr;
     PrimitiveBatch2D*    batch   = nullptr;   // 2D 오버레이 배처
     PrimitiveBatch3D*    batch3d = nullptr;   // 월드공간 3D 라인/도형 배처
+    ID3D11RenderTargetView* backRTV = nullptr; // 백버퍼 RTV(오프스크린 후 복귀용)
+    ID3D11DepthStencilView* backDSV = nullptr; // 백버퍼 DSV
     int screenWidth  = 0;
     int screenHeight = 0;
 

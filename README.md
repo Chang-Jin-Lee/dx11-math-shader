@@ -6,7 +6,7 @@
 - **플랫폼**: Win32 Desktop, x64, Direct3D 11
 - **의존성**: **Windows SDK만 사용** (vcpkg/NuGet/외부 라이브러리 불필요) — clone 후 바로 빌드됩니다.
 
-> 작성 중인 프로젝트입니다. 현재 **Scene01~04** (게임수학 기초 · 보간/곡선 · 행렬/투영 · Phong/Normal Mapping) 가 구현되어 있고, **Scene05~08** 은 같은 씬 시스템 위에 순차적으로 추가됩니다. 전체 명세는 [`docs/dx11-math-shader-demo-guide.md`](docs/dx11-math-shader-demo-guide.md) 참고.
+> 작성 중인 프로젝트입니다. 현재 **Scene01~05** (게임수학 기초 · 보간/곡선 · 행렬/투영 · Phong/Normal Mapping · 스타일라이즈드 셰이딩) 가 구현되어 있고, **Scene06~08** 은 같은 씬 시스템 위에 순차적으로 추가됩니다. 전체 명세는 [`docs/dx11-math-shader-demo-guide.md`](docs/dx11-math-shader-demo-guide.md) 참고.
 
 ---
 
@@ -156,6 +156,32 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 
 ---
 
+## Scene05 — 스타일라이즈드 셰이딩 (캐릭터)
+
+비사실적(NPR) 셰이딩을 **VRoid 캐릭터(.glb)** 에 적용합니다. 마우스 좌드래그 공전, 휠 줌.
+
+| 서브모드 | 내용 |
+|----------|------|
+| `Q` Toon | 밝기를 단계로 양자화한 셀 셰이딩 + 림 |
+| `W` Outline | 뒷면을 노멀 방향으로 확장한 외곽선 + 일반 셰이딩 |
+| `E` Toon+Outline | 셀 셰이딩 + 외곽선 (애니메 룩) |
+| `R` Sobel | 오프스크린 렌더 → 전체화면 Sobel 엣지 (연필 스케치) |
+| `T` Hatching | 밝기별 절차적 사선 (펜화) |
+
+`.glb` 로딩은 단일 헤더 [`cgltf`](https://github.com/jkuhlmann/cgltf)(MIT)로 처리하며 **형상(위치·법선·UV)만** 사용합니다(텍스처 미사용). 오프스크린 RT/전체화면 패스는 [`src/Render/RenderTexture.h`](src/Render/RenderTexture.h)·[`FullscreenPass.h`](src/Render/FullscreenPass.h)로, 이후 포스트프로세싱 씬에서도 재사용됩니다.
+
+<table>
+  <tr>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene05/scene05_toon.png" alt="Toon" /><br/><sub><b>Q</b> Toon</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene05/scene05_outline.png" alt="Outline" /><br/><sub><b>W</b> Outline</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene05/scene05_toon_outline.png" alt="Toon+Outline" /><br/><sub><b>E</b> Toon+Outline</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene05/scene05_sobel.png" alt="Sobel" /><br/><sub><b>R</b> Sobel</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene05/scene05_hatching.png" alt="Hatching" /><br/><sub><b>T</b> Hatching</sub></td>
+  </tr>
+</table>
+
+---
+
 ## 아키텍처
 
 ```
@@ -168,7 +194,8 @@ src/
 │   ├── Scene01_MathFundamentals.{h,cpp}
 │   ├── Scene02_CurvesAndSplines.{h,cpp}    보간·Bezier·Hermite·Catmull-Rom
 │   ├── Scene03_TransformProjection.{h,cpp} 행렬·투영·LookAt
-│   └── Scene04_PhongAndNormalMap.{h,cpp}   Phong/NormalMap (임베드 HLSL)
+│   ├── Scene04_PhongAndNormalMap.{h,cpp}   Phong/NormalMap (임베드 HLSL)
+│   └── Scene05_StylizedShading.{h,cpp}     Toon/Outline/Sobel/Hatching
 ├── Math/
 │   ├── Collision2D.h                AABB/OBB(SAT)/반사/다각형 내부판별
 │   └── Curves.h                     Bezier/Hermite/Catmull-Rom/이징
@@ -176,7 +203,13 @@ src/
 │   ├── Geometry.h                   구/평면 메시 + 탄젠트
 │   ├── OrbitCamera.h                궤도 카메라
 │   ├── PrimitiveBatch3D.{h,cpp}     월드공간 3D 라인/도형 배처
-│   └── ProceduralTexture.h          벽돌 디퓨즈/노말맵 절차 생성
+│   ├── ProceduralTexture.h          벽돌 디퓨즈/노말맵 절차 생성
+│   ├── RenderTexture.h              오프스크린 렌더 타겟
+│   ├── FullscreenPass.h             전체화면 삼각형 VS (포스트)
+│   ├── ModelLoader.{h,cpp}          .glb 로더 (cgltf 래퍼)
+│   └── cgltf.h                      단일 헤더 glTF 파서 (MIT, 외부)
+assets/
+└── character.glb                    VRoid 캐릭터 (Scene05)
 └── (프레임워크) d3dApp, d3dUtil, DXTrace, CpuTimer, Keyboard, Mouse, WinMin
 ```
 
@@ -191,6 +224,8 @@ src/
 
 - 베이스 프레임워크(`d3dApp`, `Keyboard`, `Mouse`, `DXTrace` 등)는
   [MKXJun/DirectX11-With-Windows-SDK](https://github.com/MKXJun/DirectX11-With-Windows-SDK) (MIT License)를 기반으로 정리했습니다.
+- `.glb` 로딩은 [jkuhlmann/cgltf](https://github.com/jkuhlmann/cgltf) (MIT License) 단일 헤더를 사용합니다.
+- Scene05의 캐릭터(`assets/character.glb`)는 저장소 소유자가 **VRoid Studio로 직접 제작**한 모델입니다.
 - 데모 설계 및 Scene 구현은 본 저장소에서 작성.
 
 ## 라이선스
