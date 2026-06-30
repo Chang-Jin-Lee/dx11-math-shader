@@ -6,7 +6,7 @@
 - **플랫폼**: Win32 Desktop, x64, Direct3D 11
 - **의존성**: **Windows SDK만 사용** (vcpkg/NuGet/외부 라이브러리 불필요) — clone 후 바로 빌드됩니다.
 
-> 작성 중인 프로젝트입니다. 현재 **Scene01~06** (게임수학 기초 · 보간/곡선 · 행렬/투영 · Phong/Normal Mapping · 스타일라이즈드 셰이딩 · 절차적 노이즈) 가 구현되어 있고, **Scene07~08** 은 같은 씬 시스템 위에 순차적으로 추가됩니다. 전체 명세는 [`docs/dx11-math-shader-demo-guide.md`](docs/dx11-math-shader-demo-guide.md) 참고.
+> 작성 중인 프로젝트입니다. 현재 **Scene01~07** (게임수학 기초 · 보간/곡선 · 행렬/투영 · Phong/Normal Mapping · 스타일라이즈드 셰이딩 · 절차적 노이즈 · 포스트 프로세싱) 가 구현되어 있고, **Scene08(Deferred)** 만 남았습니다. 전체 명세는 [`docs/dx11-math-shader-demo-guide.md`](docs/dx11-math-shader-demo-guide.md) 참고.
 
 ---
 
@@ -206,6 +206,32 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 
 ---
 
+## Scene07 — 포스트 프로세싱
+
+씬(구체+바닥, 강한 점광원)을 **HDR 렌더 타겟**(`R16G16B16A16_FLOAT`)에 그린 뒤 전체화면 패스로 가공합니다. 마우스 좌드래그 공전.
+
+| 서브모드 | 내용 |
+|----------|------|
+| `Q` Gaussian Blur | 분리형 2-pass(수평→수직), `[` `]` 로 반경 |
+| `W` Bilateral | 엣지 보존 블러 (공간×색상 가중치) |
+| `E` Gamma | 좌: 미적용 / 우: sRGB 감마 비교 |
+| `R` Tone Mapping | 좌: Reinhard / 우: ACES, `Z`/`X` 노출 |
+| `T` Bloom | Bright-pass → Blur → 합성 |
+
+오프스크린 RT(`RenderTexture`, FLOAT)와 핑퐁 버퍼로 다중 패스를 구성합니다.
+
+<table>
+  <tr>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene07/scene07_blur.png" alt="Blur" /><br/><sub><b>Q</b> Gaussian Blur</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene07/scene07_bilateral.png" alt="Bilateral" /><br/><sub><b>W</b> Bilateral</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene07/scene07_gamma.png" alt="Gamma" /><br/><sub><b>E</b> Gamma 비교</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene07/scene07_tonemap.png" alt="ToneMap" /><br/><sub><b>R</b> Reinhard/ACES</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene07/scene07_bloom.png" alt="Bloom" /><br/><sub><b>T</b> Bloom</sub></td>
+  </tr>
+</table>
+
+---
+
 ## 아키텍처
 
 ```
@@ -220,7 +246,8 @@ src/
 │   ├── Scene03_TransformProjection.{h,cpp} 행렬·투영·LookAt
 │   ├── Scene04_PhongAndNormalMap.{h,cpp}   Phong/NormalMap (임베드 HLSL)
 │   ├── Scene05_StylizedShading.{h,cpp}     Toon/Outline/Sobel/Hatching
-│   └── Scene06_ProceduralNoise.{h,cpp}     노이즈/FBM/DomainWarp/Truchet
+│   ├── Scene06_ProceduralNoise.{h,cpp}     노이즈/FBM/DomainWarp/Truchet
+│   └── Scene07_PostProcessing.{h,cpp}      Blur/Bilateral/Gamma/ToneMap/Bloom
 ├── Math/
 │   ├── Collision2D.h                AABB/OBB(SAT)/반사/다각형 내부판별
 │   └── Curves.h                     Bezier/Hermite/Catmull-Rom/이징

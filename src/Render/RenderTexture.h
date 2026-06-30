@@ -53,6 +53,7 @@ public:
     }
 
     ID3D11ShaderResourceView* SRV() const { return m_srv.Get(); }
+    ID3D11RenderTargetView*   RTV() const { return m_rtv.Get(); }
     int Width() const { return m_w; }
     int Height() const { return m_h; }
 
