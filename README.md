@@ -58,21 +58,21 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 <table>
   <tr>
     <td align="center" width="50%">
-      <img width="420" src="docs/images/scene01/scene01_aabb.png" alt="AABB 충돌" /><br/>
+      <img width="420" src="docs/images/scene01/scene01_aabb.gif" alt="AABB 충돌" /><br/>
       <sub><b>Q</b> · AABB 충돌 — 겹치면 빨강, 아니면 초록</sub>
     </td>
     <td align="center" width="50%">
-      <img width="420" src="docs/images/scene01/scene01_obb.png" alt="OBB SAT 충돌" /><br/>
+      <img width="420" src="docs/images/scene01/scene01_obb.gif" alt="OBB SAT 충돌" /><br/>
       <sub><b>W</b> · OBB 충돌 — SAT(분리축 정리), 회전 박스</sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="50%">
-      <img width="420" src="docs/images/scene01/scene01_motion.png" alt="운동" /><br/>
+      <img width="420" src="docs/images/scene01/scene01_motion.gif" alt="운동" /><br/>
       <sub><b>E</b> · 운동 — 원형·타원·정현파·나선 + 궤도 경로</sub>
     </td>
     <td align="center" width="50%">
-      <img width="420" src="docs/images/scene01/scene01_reflect.png" alt="반사·다각형" /><br/>
+      <img width="420" src="docs/images/scene01/scene01_reflect.gif" alt="반사·다각형" /><br/>
       <sub><b>R</b> · 반사 — 벽 반사 벡터 + 볼록 다각형 내부 판별</sub>
     </td>
   </tr>
@@ -95,12 +95,12 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 
 <table>
   <tr>
-    <td align="center" width="50%"><img width="420" src="docs/images/scene02/scene02_interp.png" alt="보간 비교" /><br/><sub><b>Q</b> · 보간 비교 + 그래프</sub></td>
-    <td align="center" width="50%"><img width="420" src="docs/images/scene02/scene02_bezier.png" alt="Bezier" /><br/><sub><b>W</b> · 3차 Bezier (de Casteljau)</sub></td>
+    <td align="center" width="50%"><img width="420" src="docs/images/scene02/scene02_interp.gif" alt="보간 비교" /><br/><sub><b>Q</b> · 보간 비교 + 그래프</sub></td>
+    <td align="center" width="50%"><img width="420" src="docs/images/scene02/scene02_bezier.gif" alt="Bezier" /><br/><sub><b>W</b> · 3차 Bezier (de Casteljau)</sub></td>
   </tr>
   <tr>
-    <td align="center" width="50%"><img width="420" src="docs/images/scene02/scene02_hermite.png" alt="Hermite" /><br/><sub><b>E</b> · Hermite (접선 핸들)</sub></td>
-    <td align="center" width="50%"><img width="420" src="docs/images/scene02/scene02_catmull.png" alt="Catmull-Rom" /><br/><sub><b>R</b> · Catmull-Rom 닫힌 스플라인</sub></td>
+    <td align="center" width="50%"><img width="420" src="docs/images/scene02/scene02_hermite.gif" alt="Hermite" /><br/><sub><b>E</b> · Hermite (접선 핸들)</sub></td>
+    <td align="center" width="50%"><img width="420" src="docs/images/scene02/scene02_catmull.gif" alt="Catmull-Rom" /><br/><sub><b>R</b> · Catmull-Rom 닫힌 스플라인</sub></td>
   </tr>
 </table>
 
@@ -120,9 +120,9 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 
 <table>
   <tr>
-    <td align="center" width="33%"><img width="300" src="docs/images/scene03/scene03_trs.png" alt="TRS" /><br/><sub><b>Q</b> · TRS 분해 (S·R·T + 행렬값)</sub></td>
-    <td align="center" width="33%"><img width="300" src="docs/images/scene03/scene03_projection.png" alt="투영 비교" /><br/><sub><b>W</b> · 정사영 vs 원근</sub></td>
-    <td align="center" width="33%"><img width="300" src="docs/images/scene03/scene03_lookat.png" alt="LookAt" /><br/><sub><b>E</b> · LookAt 직접 전개</sub></td>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene03/scene03_trs.gif" alt="TRS" /><br/><sub><b>Q</b> · TRS 분해 (S·R·T + 행렬값)</sub></td>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene03/scene03_projection.gif" alt="투영 비교" /><br/><sub><b>W</b> · 정사영 vs 원근</sub></td>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene03/scene03_lookat.gif" alt="LookAt" /><br/><sub><b>E</b> · LookAt 직접 전개</sub></td>
   </tr>
 </table>
 
@@ -144,13 +144,13 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 
 <table>
   <tr>
-    <td align="center"><img width="230" src="docs/images/scene04/scene04_diffuse.png" alt="Diffuse" /><br/><sub><b>Q</b> · Diffuse</sub></td>
-    <td align="center"><img width="230" src="docs/images/scene04/scene04_specular.png" alt="Specular" /><br/><sub><b>W</b> · +Specular</sub></td>
-    <td align="center"><img width="230" src="docs/images/scene04/scene04_ambient.png" alt="Ambient" /><br/><sub><b>E</b> · +Ambient</sub></td>
-    <td align="center"><img width="230" src="docs/images/scene04/scene04_phong.png" alt="Phong" /><br/><sub><b>R</b> · 전체 Phong</sub></td>
+    <td align="center"><img width="230" src="docs/images/scene04/scene04_diffuse.gif" alt="Diffuse" /><br/><sub><b>Q</b> · Diffuse</sub></td>
+    <td align="center"><img width="230" src="docs/images/scene04/scene04_specular.gif" alt="Specular" /><br/><sub><b>W</b> · +Specular</sub></td>
+    <td align="center"><img width="230" src="docs/images/scene04/scene04_ambient.gif" alt="Ambient" /><br/><sub><b>E</b> · +Ambient</sub></td>
+    <td align="center"><img width="230" src="docs/images/scene04/scene04_phong.gif" alt="Phong" /><br/><sub><b>R</b> · 전체 Phong</sub></td>
   </tr>
   <tr>
-    <td colspan="4" align="center"><img width="560" src="docs/images/scene04/scene04_normalmap.png" alt="Normal Mapping" /><br/><sub><b>T</b> · Normal Mapping — 절차적 벽돌 디퓨즈/노말맵</sub></td>
+    <td colspan="4" align="center"><img width="420" src="docs/images/scene04/scene04_normalmap.gif" alt="Normal Mapping" /><br/><sub><b>T</b> · Normal Mapping — 절차적 벽돌 디퓨즈/노말맵</sub></td>
   </tr>
 </table>
 
@@ -175,14 +175,14 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 
 <table>
   <tr>
-    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_toon.png" alt="Toon" /><br/><sub><b>Q</b> Toon</sub></td>
-    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_outline.png" alt="Outline" /><br/><sub><b>W</b> Outline(스무스 노말)</sub></td>
-    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_toon_outline.png" alt="Toon+Outline" /><br/><sub><b>E</b> Toon+Outline</sub></td>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_toon.gif" alt="Toon" /><br/><sub><b>Q</b> Toon</sub></td>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_outline.gif" alt="Outline" /><br/><sub><b>W</b> Outline(스무스 노말)</sub></td>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_toon_outline.gif" alt="Toon+Outline" /><br/><sub><b>E</b> Toon+Outline</sub></td>
   </tr>
   <tr>
-    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_sobel_outline.png" alt="Sobel Outline" /><br/><sub><b>Y</b> Sobel 외곽선(깊이·법선)</sub></td>
-    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_sobel.png" alt="Sobel" /><br/><sub><b>R</b> Sobel(스케치)</sub></td>
-    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_hatching.png" alt="Hatching" /><br/><sub><b>T</b> Hatching</sub></td>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_sobel_outline.gif" alt="Sobel Outline" /><br/><sub><b>Y</b> Sobel 외곽선(깊이·법선)</sub></td>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_sobel.gif" alt="Sobel" /><br/><sub><b>R</b> Sobel(스케치)</sub></td>
+    <td align="center" width="33%"><img width="300" src="docs/images/scene05/scene05_hatching.gif" alt="Hatching" /><br/><sub><b>T</b> Hatching</sub></td>
   </tr>
 </table>
 
@@ -202,11 +202,11 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 
 <table>
   <tr>
-    <td align="center" width="20%"><img width="190" src="docs/images/scene06/scene06_random.png" alt="Random" /><br/><sub><b>Q</b> 의사난수</sub></td>
-    <td align="center" width="20%"><img width="190" src="docs/images/scene06/scene06_value_perlin.png" alt="Value/Perlin" /><br/><sub><b>W</b> Value/Perlin</sub></td>
-    <td align="center" width="20%"><img width="190" src="docs/images/scene06/scene06_fbm.png" alt="FBM" /><br/><sub><b>E</b> FBM</sub></td>
-    <td align="center" width="20%"><img width="190" src="docs/images/scene06/scene06_domainwarp.png" alt="Domain Warp" /><br/><sub><b>R</b> DomainWarp/Ripple</sub></td>
-    <td align="center" width="20%"><img width="190" src="docs/images/scene06/scene06_truchet.png" alt="Truchet" /><br/><sub><b>T</b> Truchet</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene06/scene06_random.gif" alt="Random" /><br/><sub><b>Q</b> 의사난수</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene06/scene06_value_perlin.gif" alt="Value/Perlin" /><br/><sub><b>W</b> Value/Perlin</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene06/scene06_fbm.gif" alt="FBM" /><br/><sub><b>E</b> FBM</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene06/scene06_domainwarp.gif" alt="Domain Warp" /><br/><sub><b>R</b> DomainWarp/Ripple</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene06/scene06_truchet.gif" alt="Truchet" /><br/><sub><b>T</b> Truchet</sub></td>
   </tr>
 </table>
 
@@ -228,11 +228,11 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 
 <table>
   <tr>
-    <td align="center" width="20%"><img width="190" src="docs/images/scene07/scene07_blur.png" alt="Blur" /><br/><sub><b>Q</b> Gaussian Blur</sub></td>
-    <td align="center" width="20%"><img width="190" src="docs/images/scene07/scene07_bilateral.png" alt="Bilateral" /><br/><sub><b>W</b> Bilateral</sub></td>
-    <td align="center" width="20%"><img width="190" src="docs/images/scene07/scene07_gamma.png" alt="Gamma" /><br/><sub><b>E</b> Gamma 비교</sub></td>
-    <td align="center" width="20%"><img width="190" src="docs/images/scene07/scene07_tonemap.png" alt="ToneMap" /><br/><sub><b>R</b> Reinhard/ACES</sub></td>
-    <td align="center" width="20%"><img width="190" src="docs/images/scene07/scene07_bloom.png" alt="Bloom" /><br/><sub><b>T</b> Bloom</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene07/scene07_blur.gif" alt="Blur" /><br/><sub><b>Q</b> Gaussian Blur</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene07/scene07_bilateral.gif" alt="Bilateral" /><br/><sub><b>W</b> Bilateral</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene07/scene07_gamma.gif" alt="Gamma" /><br/><sub><b>E</b> Gamma 비교</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene07/scene07_tonemap.gif" alt="ToneMap" /><br/><sub><b>R</b> Reinhard/ACES</sub></td>
+    <td align="center" width="20%"><img width="190" src="docs/images/scene07/scene07_bloom.gif" alt="Bloom" /><br/><sub><b>T</b> Bloom</sub></td>
   </tr>
 </table>
 
@@ -254,8 +254,8 @@ msbuild DX11MathShader.sln /p:Configuration=Release /p:Platform=x64
 
 <table>
   <tr>
-    <td align="center" width="50%"><img width="420" src="docs/images/scene08/scene08_deferred.png" alt="Deferred" /><br/><sub>8개 점광원 디퍼드 라이팅 (광원 마커 표시)</sub></td>
-    <td align="center" width="50%"><img width="420" src="docs/images/scene08/scene08_gbuffer.png" alt="G-Buffer" /><br/><sub><b>F</b> · G-Buffer 시각화 (Albedo / Normal / WorldPos / 최종)</sub></td>
+    <td align="center" width="50%"><img width="420" src="docs/images/scene08/scene08_deferred.gif" alt="Deferred" /><br/><sub>8개 점광원 디퍼드 라이팅 (광원 마커 표시)</sub></td>
+    <td align="center" width="50%"><img width="420" src="docs/images/scene08/scene08_gbuffer.gif" alt="G-Buffer" /><br/><sub><b>F</b> · G-Buffer 시각화 (Albedo / Normal / WorldPos / 최종)</sub></td>
   </tr>
 </table>
 
